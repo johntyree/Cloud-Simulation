@@ -2,8 +2,6 @@
 -compile(export_all). %% Probably replace with -export([funcs])
 -author("John Tyree").
 
-Dick = foo.
-
 saturation_pressure(C) when C >= -50, C =< 102 ->
     T = 273.16 + C,
     math:pow(10,

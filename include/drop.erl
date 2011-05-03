@@ -19,8 +19,6 @@ migrate({X, Y}, {DX, DY}) ->
 migrate(New, Delta, Max) when New + Delta >= Max -> New + Delta - Max;
 migrate(New, Delta, Max) when New + Delta < 0 -> New + Delta + Max;
 
-
-
 move(S#state) ->
     Timeout = constants:timeout(),
     NewPosition = migrate(S#state.position, random_direction()),
