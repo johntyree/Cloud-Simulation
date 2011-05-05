@@ -70,11 +70,12 @@ coalesce(S = #state{}, Pid) ->
 
 % Change the actual position, taking boundary conditions into account
 migrate({X, Y}, {DX, DY}) ->
-    NewX = migrate(X, DX, gridsize_X),
-    NewY = migrate(Y, DY, gridsize_Y),
+    NewX = migrate(X, DX, ?GRIDSIZE_X),
+    NewY = migrate(Y, DY, ?GRIDSIZE_Y),
     {NewX, NewY}.
 migrate(New, Delta, Max) when New + Delta >= Max -> New + Delta - Max;
-migrate(New, Delta, Max) when New + Delta < 0 -> New + Delta + Max.
+migrate(New, Delta, Max) when New + Delta < 0 -> New + Delta + Max;
+migrate(New, Delta, _Max) -> New + Delta.
 
 % Chose a random x and y movement from -1,0,1
 random_direction() -> {random:uniform(3)-2, random:uniform(3)-2}.
@@ -85,7 +86,7 @@ handle_collision(_Us, _Them) ->
     ok.
 % Location of a new drop
 new_position() ->
-    ok.
+    {random:uniform(30)-1, random:uniform(30)-1}.
 % Size of a new drop ->
 new_size() ->
     ok.

@@ -1,0 +1,7 @@
+*~
+.*.swp
+.swp
+*.out
+*.beam
+tags
+gsl/
