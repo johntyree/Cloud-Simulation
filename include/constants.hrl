@@ -1,6 +1,11 @@
--module(constants).
--compile(export_all). %% Probably replace with -export([funcs])
--author("John Tyree").
+-record(state, {
+        server,
+        position,
+        size
+    }).
+
+-define(gridsize_X, 30).
+-define(gridsize_Y, 30).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
     T = 273.16 + C,
