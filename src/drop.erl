@@ -13,7 +13,6 @@ init(Server, Round) ->
             size = Size}, Round).
 
 loop(S = #state{}, Round) ->
-    Timeout = constants:timeout(),
     receive
         {ok, NextRound} ->
             if NextRound =/= Round ->
@@ -33,8 +32,8 @@ loop(S = #state{}, Round) ->
         {die, From, Reason} ->
             From ! {Reason, S},
             exit(Reason)
-    after Timeout -> % What's taking so long? Print error and die.
-            io:format("~p: Dead after ~p seconds.", [self(), Timeout/1000]),
+    after ?TIMEOUT -> % What's taking so long? Print error and die.
+            io:format("~p: Dead after ~p seconds.", [self(), ?TIMEOUT/1000]),
             exit(timeout)
     end.
 
@@ -45,20 +44,20 @@ move(S = #state{}) ->
     S#state{position = NewPosition}.
 
 coalesce(S = #state{}, Pid) ->
-    Timeout = constants:timeout(),
+    ?TIMEOUT = constants:timeout(),
     Pid ! {die, self(), coalesced},
     receive
         {coalesced, #state{size = Size}} ->
             NewSize = S#state.size + Size,
             S#state{size = NewSize}
-    after Timeout ->
+    after ?TIMEOUT ->
             io:format("~p: No response from Drop ~p.", [self(),
                     Pid]),
             exit(timeout)
     end.
 
 %split(S = #state{}) ->
-    %Timeout = constants:timeout(),
+    %?TIMEOUT = constants:timeout(),
     %NewSize = S#state.size / 2,
     %NewDrop = spawn(move, S#state{
             %size = NewSize
@@ -93,12 +92,12 @@ new_size() ->
 
 % Retrieve the state of a drop
 get_state(Pid) ->
-    Timeout = constants:timeout(),
+    ?TIMEOUT = constants:timeout(),
     Ref = make_ref(),
     Pid ! {send_state, Ref, self()},
     receive
         {send_state, Ref, S} -> S
-    after Timeout ->
+    after ?TIMEOUT ->
             io:format("~p: No response from Drop ~p.", [self(), Pid]),
             exit(timeout)
     end.
