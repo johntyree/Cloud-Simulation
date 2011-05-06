@@ -5,10 +5,10 @@
 
 main(0) ->
     io:format("~p~n", [gaussian(0, 1)]),
-    %io:format("~p ", [random_nonzero()]),
+    %io:format("~p~n", [random:uniform()]),
     erlang:halt(0);
 main(N) ->
     io:format("~p ", [gaussian(0, 1)]),
-    %io:format("~p ", [random_nonzero()]),
+    %io:format("~p ", [random:uniform()]),
     main(N-1).
 
