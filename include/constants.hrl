@@ -41,13 +41,13 @@ gaussian(Mu, Sigma) ->
     Y = abs(V) - T,
     Q = X * X + Y * (A * Y - B * X),
     if Q < R1 ->
-            Sigma * (U / V) + Mu;
+            Sigma * (V / U) + Mu;
         Q > R2 ->
             gaussian(Mu, Sigma);
         true ->
             case (V * V) > (-4 * U * U * math:log(U)) of
                 true -> gaussian(Mu, Sigma);
-                false -> Sigma * (U / V) + Mu
+                false -> Sigma * (V / U) + Mu
             end
     end.
 
