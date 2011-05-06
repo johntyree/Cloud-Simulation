@@ -4,8 +4,8 @@
         size
     }).
 
--define(GRIDSIZE_X, 30).
--define(GRIDSIZE_Y, 30).
+-define(GRIDSIZE_X, 3000).
+-define(GRIDSIZE_Y, 3000).
 -define(TIMEOUT, 500).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
@@ -35,8 +35,8 @@ gaussian(Mu, Sigma) ->
     B = 0.25472,
     R1 = 0.27597,
     R2 = 0.27846,
-    U = random_nonboundary(0, 1), % To avoid singularity
-    V = 1.7156 * (random_nonboundary(0, 1) - 0.5),
+    U = random_uniform_nonboundary(0, 1), % To avoid singularity
+    V = 1.7156 * (random_uniform_nonboundary(0, 1) - 0.5),
     X = U - S,
     Y = abs(V) - T,
     Q = X * X + Y * (A * Y - B * X),
@@ -51,11 +51,16 @@ gaussian(Mu, Sigma) ->
             end
     end.
 
-random_nonboundary(L, U) ->
-    X = random:uniform() * (U - L) + L,
-    %crypto:random_bytes   
+random_uniform_nonboundary(L, U) ->
+    <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
+    random:seed(A, B, C),
+    X = (U - L) * random:uniform() + L,
+    %crypto:random_bytes
     if L == X; U == X -> %% To match integers
-            random_nonboundary(L, U);
+            random_uniform_nonboundary(L, U);
         true ->
             X
     end.
+
+random_int(U) when is_integer(U), U >= 0 -> random_int(0, U).
+random_int(L, U) when is_integer(U), is_integer(L) -> crypto:rand_uniform(L, U).

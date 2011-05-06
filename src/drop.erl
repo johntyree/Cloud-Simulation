@@ -8,6 +8,7 @@
 init(Server, Round) ->
     Position = new_position(),
     Size = new_size(),
+    Server ! {newdrop, self(), {Position, Size}},
     loop(#state{server = Server,
             position = Position,
             size = Size}, Round).
@@ -33,8 +34,9 @@ loop(S = #state{}, Round) ->
             From ! {Reason, S},
             exit(Reason)
     after ?TIMEOUT -> % What's taking so long? Print error and die.
-            io:format("~p: Dead after ~p seconds.", [self(), ?TIMEOUT/1000]),
-            exit(timeout)
+            error_logger:error_msg("~p: Dead after ~p seconds.", [self(), ?TIMEOUT/1000])
+            % TODO
+            %exit(timeout)
     end.
 
 move(S = #state{}) ->
@@ -51,7 +53,7 @@ coalesce(S = #state{}, Pid) ->
             NewSize = S#state.size + Size,
             S#state{size = NewSize}
     after ?TIMEOUT ->
-            io:format("~p: No response from Drop ~p.", [self(),
+            error_logger:error_msg("~p: No response from Drop ~p.", [self(),
                     Pid]),
             exit(timeout)
     end.
@@ -78,7 +80,7 @@ migrate(New, Delta, Max) when New + Delta < 0 -> New + Delta + Max;
 migrate(New, Delta, _Max) -> New + Delta.
 
 % Chose a random x and y movement from -1,0,1
-random_direction() -> {random:uniform(3)-2, random:uniform(3)-2}.
+random_direction() -> {random_int(-1, 1), random_int(-1, 1)}.
 
 %%  Stochastic decision making
 % when two drops are at the same site
@@ -86,10 +88,17 @@ handle_collision(_Us, _Them) ->
     ok.
 % Location of a new drop
 new_position() ->
-    {random:uniform(30)-1, random:uniform(30)-1}.
+    {random_int(?GRIDSIZE_X - 1), random_int(?GRIDSIZE_Y - 1)}.
 % Size of a new drop ->
+% http://ga.water.usgs.gov/edu/raindropsizes.html
+% Range 0.001mm, 0.05mm. "Rain" at 0.5mm.
 new_size() ->
-    ok.
+    X = gaussian(0.025, 0.006),
+    if X =< 0 ->
+            new_size();
+        true ->
+            X
+    end.
 
 % Retrieve the state of a drop
 get_state(Pid) ->
@@ -99,6 +108,6 @@ get_state(Pid) ->
     receive
         {send_state, Ref, S} -> S
     after ?TIMEOUT ->
-            io:format("~p: No response from Drop ~p.", [self(), Pid]),
+            error_logger:format("~p: No response from Drop ~p.", [self(), Pid]),
             exit(timeout)
     end.
