@@ -6,11 +6,9 @@
 main(Args) ->
     initial_config(),
     L = deity:init(Args),
-    %io:format("~p~n", [L]),
+
     [io:format("~p ~p ~p~n", [X, Y, Z]) || {{X, Y}, {_, Z}} <- L],
     erlang:halt(0).
-
-
 
 initial_config() ->
     error_logger:logfile({open, "log"}).
