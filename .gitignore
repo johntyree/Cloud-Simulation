@@ -5,3 +5,5 @@
 *.beam
 tags
 gsl/
+erl_crash.dump
+ebin/
