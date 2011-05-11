@@ -6,6 +6,7 @@
 
 -define(GRIDSIZE_X, 3000).
 -define(GRIDSIZE_Y, 3000).
+-define(GRIDSIZE_Z, 0).
 -define(TIMEOUT, 500).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
