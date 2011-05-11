@@ -1,7 +1,7 @@
 -module(cloud_simulation).
 -compile(export_all). %% Probably replace with -export([funcs])
 
--include("constants.hrl").
+-include_lib("constants.hrl").
 
 main(Args) ->
     initial_config(),
@@ -27,3 +27,6 @@ run(N) ->
     %io:format("~p ", [random:uniform()]),
     run(N-1).
 
+gb_trees
+
+malloc
