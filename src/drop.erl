@@ -3,84 +3,57 @@
 -author("John Tyree").
 
 -include_lib("constants.hrl").
+-include_lib("drop.hrl").
 
 %% Make a new drop
-init(Server, Round) ->
+new() ->
     Position = new_position(),
     Size = new_size(),
-    Server ! {newdrop, self(), {Position, Size}},
-    loop(#state{server = Server,
-            position = Position,
-            size = Size}, Round).
+    #dropstate{position = Position,
+        size = Size}, Round).
 
-loop(S = #state{}, Round) ->
-    receive
-        {ok, NextRound} ->
-            if NextRound =/= Round ->
-                    NewS = move(S);
-                true ->
-                    NewS = S
-            end,
-            loop(NewS, NextRound);
-        {collision, {_From, Pid}} ->
-            case handle_collision(S, get_state(Pid)) of
-                coalesce ->
-                    NewS = coalesce(S, Pid);
-                true ->
-                    NewS = S
-            end,
-            loop(NewS, Round);
-        {die, From, Reason} ->
-            From ! {Reason, S},
-            exit(Reason)
-    after ?TIMEOUT -> % What's taking so long? Print error and die.
-            error_logger:error_msg("~p: Dead after ~p seconds.", [self(), ?TIMEOUT/1000])
-            % TODO
-            %exit(timeout)
+
+coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
+    NewSize = S1#dropstate.size + S2#dropstate.size,
+    S1#dropstate{size = NewSize}.
+
+split(S = #dropstate{}) ->
+    NewSize = S#dropstate.size / 2,
+    {S#state{size = NewSize}, S#state{size = NewSize}}.
+
+move(S = #dropstate{}) ->
+    NewPosition = migrate(S#dropstate.position, random_direction()),
+    S#dropstate{position = NewPosition}.
+    {S1, NewX} = migrate(X, DX, ?GRIDSIZE_X),
+    {S2, NewY} = migrate(Y, DY, ?GRIDSIZE_Y),
+    {S3, NewZ} = migrate(Z, DZ, ?GRIDSIZE_Z),
+    case lists:all(fun({S,_}) -> S =:= ok end, [NewX, NewY, NewZ]) of
+        true -> {ok, {NewX, NewY, NewZ}};
+        false -> {out_of_bounds, {NewX, NewY, NewZ}}
     end.
 
-move(S = #state{}) ->
-    NewPosition = migrate(S#state.position, random_direction()),
-    Ref = make_ref(),
-    S#state.server ! {move, Ref, {self(), NewPosition}},
-    S#state{position = NewPosition}.
 
-coalesce(S = #state{}, Pid) ->
-    ?TIMEOUT = constants:timeout(),
-    Pid ! {die, self(), coalesced},
-    receive
-        {coalesced, #state{size = Size}} ->
-            NewSize = S#state.size + Size,
-            S#state{size = NewSize}
-    after ?TIMEOUT ->
-            error_logger:error_msg("~p: No response from Drop ~p.", [self(),
-                    Pid]),
-            exit(timeout)
-    end.
 
-%split(S = #state{}) ->
-    %?TIMEOUT = constants:timeout(),
-    %NewSize = S#state.size / 2,
-    %NewDrop = spawn(move, S#state{
-            %size = NewSize
-        %}),
-    %loop(S#state{
-            %size = NewSize
-        %}).
 
-%% Private Functions
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%%                   %%
+%% Private Functions %%
+%%                   %%
+%%%%%%%%%%%%%%%%%%%%%%%
 
 % Change the actual position, taking boundary conditions into account
-migrate({X, Y}, {DX, DY}) ->
-    NewX = migrate(X, DX, ?GRIDSIZE_X),
-    NewY = migrate(Y, DY, ?GRIDSIZE_Y),
-    {NewX, NewY}.
-migrate(New, Delta, Max) when New + Delta >= Max -> New + Delta - Max;
-migrate(New, Delta, Max) when New + Delta < 0 -> New + Delta + Max;
-migrate(New, Delta, _Max) -> New + Delta.
+%ret: {status, {coords}}
+migrate({X, Y, Z}, {DX, DY, DZ}) ->
+    NewX = migrate(X, DX),
+    NewY = migrate(Y, DY),
+    NewZ = migrate(Z, DZ),
+    {NewX, NewY, NewZ}.
+migrate(New, Delta) -> New + Delta.
 
 % Chose a random x and y movement from -1,0,1
-random_direction() -> {random_int(-1, 1), random_int(-1, 1)}.
+random_direction() -> random_direction(1).
+random_direction(Step) -> {random_int(-Step, Step), random_int(-Step, Step)}.
 
 %%  Stochastic decision making
 % when two drops are at the same site
