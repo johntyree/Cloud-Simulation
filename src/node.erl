@@ -4,50 +4,43 @@
 
 -include_lib("constants.hrl").
 
--record(node, {
+-record(state, {
         xoffset = {0, ?GRIDSIZE_X},
         yoffset = {0, ?GRIDSIZE_Y},
         zoffset = {0, ?GRIDSIZE_Z},
         drops = [],
-        left = [],
-        right = [],
-        bottom = [],
-        top = [],
-        inner = [],
-        outer = []}).
+        parent = nil}).
 
 init() ->
-    loop(#node).
-init({Xoffset, Yoffset, Zoffset}, Drops, L, R, B, T, I, O) ->
-    loop(#node{offset = {Xoffset, Yoffset, Zoffset},
+    loop(#state).
+init({Xoffset, Yoffset, Zoffset}, Drops, Parent) ->
+    loop(#state{offset = {Xoffset, Yoffset, Zoffset},
             drops = Drops,
-            left = L,
-            right = R,
-            bottom = B,
-            top = T,
-            inner = I,
-            outer = O}).
+            parent = Parent}).
 
-split(N = #node{
-init({Xoffset, Yoffset, Zoffset}, Drops, L, R, B, T, I, O) ->
-        size = Size,
-        offset = {Xoff, Yoff, Zoff},
-        drops = Drops,
-        neighbors = {Up, Down, Left, Right, In, Out}}) ->
-    {{LeftX, BottomY, InnerZ},
-        {RightX, TopY, OuterZ}} = divide_domain(Size),
-    LeftXoffset = Xoffset,
-    RightXoffset = LeftX + Xoffset,
-    BottomYoffset = Yoffset,
-    TopYoffset = BottomY + Yoffset,
-    InnerZoffset = Zoffset,
-    OuterZoffset = InnerZ + Zoffset
-    Neighbor = spawn(node, init, [
-            {NewSize,
-            NewOffset,
-            NewDrops,
-            NewNeighbors}])
+loop(S#state) ->
+    ok.
 
+%% Old and not implemented yet
+%split(N = #state{
+%init({Xoffset, Yoffset, Zoffset}, Drops, L, R, B, T, I, O) ->
+        %size = Size,
+        %offset = {Xoff, Yoff, Zoff},
+        %drops = Drops,
+        %neighbors = {Up, Down, Left, Right, In, Out}}) ->
+    %{{LeftX, BottomY, InnerZ},
+        %{RightX, TopY, OuterZ}} = divide_domain(Size),
+    %LeftXoffset = Xoffset,
+    %RightXoffset = LeftX + Xoffset,
+    %BottomYoffset = Yoffset,
+    %TopYoffset = BottomY + Yoffset,
+    %InnerZoffset = Zoffset,
+    %OuterZoffset = InnerZ + Zoffset
+    %Neighbor = spawn(state, init, [
+            %{NewSize,
+            %NewOffset,
+            %NewDrops,
+            %NewNeighbors}])
 
 
 divide_domain({Xsize, Ysize, Zsize}) ->
@@ -56,15 +49,9 @@ divide_domain({Xsize, Ysize, Zsize}) ->
     {InnerZ, OuterZ} = bisect(Zsize),
     {{LeftX, BottomY, InnerZ}, {RightX, TopY, OuterZ}}.
 
-
-
-
-
-
 bisect(Int)
     case Int rem 2 of 
         0 -> Left = Right = Int / 2;
         1 -> Left = 1 + (Rightx = Int / 2)
     end,
     {Left, Right}.
-

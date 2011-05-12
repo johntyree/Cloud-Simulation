@@ -1,0 +1,37 @@
+how do we do this?
+
+receive begin time step message from parent
+
+# simultaneous motion
+for each drop
+    move it
+   if new new location is out of bounds
+       send to parent.
+       delete drop
+
+#import/export drops
+after all drops have moved
+    send ok to parent
+    receive from parent
+        either ok or a drop
+        if drop
+            add to location list and receive again
+        if ok move on
+
+# process drop physics
+if two drops are at the same location, test for coalescence
+    if they coalesce
+        combine them
+    otherwise
+        leave them 'on top of each other'
+
+flush()  (should not be necessary)
+send done to parent
+End of Time Step
+
+
+don't do this yet
+#if a drop is too big
+    #stochastically split it into two which are now 'on top of each other'
+
+
