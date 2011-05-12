@@ -1,12 +1,7 @@
--record(state, {
-        server,
-        position,
-        size
-    }).
-
 -define(GRIDSIZE_X, 3000).
 -define(GRIDSIZE_Y, 3000).
 -define(GRIDSIZE_Z, 0).
+-define(INITIAL_DENSITY, 0.3).
 -define(TIMEOUT, 500).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
@@ -65,3 +60,11 @@ random_uniform_nonboundary(L, U) ->
 
 random_int(U) when is_integer(U), U >= 0 -> random_int(0, U).
 random_int(L, U) when is_integer(U), is_integer(L) -> crypto:rand_uniform(L, U).
+
+
+bisect(Int) ->
+    case Int rem 2 of 
+        0 -> Left = Right = Int / 2;
+        1 -> Left = 1 + (Right = Int / 2)
+    end,
+    {Left, Right}.
