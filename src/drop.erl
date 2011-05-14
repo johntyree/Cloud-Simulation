@@ -12,7 +12,6 @@ new() ->
     #dropstate{position = Position,
         size = Size}, Round).
 
-
 coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
     NewSize = S1#dropstate.size + S2#dropstate.size,
     S1#dropstate{size = NewSize}.
@@ -21,18 +20,9 @@ split(S = #dropstate{}) ->
     NewSize = S#dropstate.size / 2,
     {S#state{size = NewSize}, S#state{size = NewSize}}.
 
-move(S = #dropstate{}) ->
-    NewPosition = migrate(S#dropstate.position, random_direction()),
+move(S = #dropstate{position = P}) ->
+    NewPosition = migrate(P, random_direction()),
     S#dropstate{position = NewPosition}.
-    {S1, NewX} = migrate(X, DX, ?GRIDSIZE_X),
-    {S2, NewY} = migrate(Y, DY, ?GRIDSIZE_Y),
-    {S3, NewZ} = migrate(Z, DZ, ?GRIDSIZE_Z),
-    case lists:all(fun({S,_}) -> S =:= ok end, [NewX, NewY, NewZ]) of
-        true -> {ok, {NewX, NewY, NewZ}};
-        false -> {out_of_bounds, {NewX, NewY, NewZ}}
-    end.
-
-
 
 
 
@@ -42,7 +32,7 @@ move(S = #dropstate{}) ->
 %%                   %%
 %%%%%%%%%%%%%%%%%%%%%%%
 
-% Change the actual position, taking boundary conditions into account
+% Change the actual position,
 %ret: {status, {coords}}
 migrate({X, Y, Z}, {DX, DY, DZ}) ->
     NewX = migrate(X, DX),
