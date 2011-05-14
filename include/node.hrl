@@ -6,5 +6,5 @@
         y2 = ?GRIDSIZE_Y,
         z2 = ?GRIDSIZE_Z,
         drops = dict:new(),
-        parent = nil}).
+        parent}).
 

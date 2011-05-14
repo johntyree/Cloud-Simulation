@@ -26,7 +26,3 @@ run(N) ->
     %io:format("~p ", [gaussian(100, 4.1)]),
     %io:format("~p ", [random:uniform()]),
     run(N-1).
-
-gb_trees
-
-malloc

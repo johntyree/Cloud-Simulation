@@ -7,23 +7,23 @@
 
 %% Make a new drop
 new() ->
-    Position = new_position(),
     Size = new_size(),
-    #dropstate{position = Position,
-        size = Size}, Round).
+    #dropstate{size = Size}.
 
 coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
     NewSize = S1#dropstate.size + S2#dropstate.size,
     S1#dropstate{size = NewSize}.
 
-split(S = #dropstate{}) ->
-    NewSize = S#dropstate.size / 2,
-    {S#state{size = NewSize}, S#state{size = NewSize}}.
+split(S = #dropstate{size = Size}) ->
+    NewSize = Size / 2,
+    {S#dropstate{size = NewSize}, S#dropstate{size = NewSize}}.
 
-move(S = #dropstate{position = P}) ->
+move({P, D}) ->
     NewPosition = migrate(P, random_direction()),
-    S#dropstate{position = NewPosition}.
+    {NewPosition, D}.
 
+
+%coords(S = #dropstate{x = X, y = Y, z = Z}) -> {X, Y, Z}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -32,29 +32,32 @@ move(S = #dropstate{position = P}) ->
 %%                   %%
 %%%%%%%%%%%%%%%%%%%%%%%
 
-% Change the actual position,
-%ret: {status, {coords}}
+%% Change the actual position,
+%% This is basically just zipWith((+), T1, T2) where T's are three-tuples
+%% ret: {coords}
 migrate({X, Y, Z}, {DX, DY, DZ}) ->
-    NewX = migrate(X, DX),
-    NewY = migrate(Y, DY),
-    NewZ = migrate(Z, DZ),
+    NewX = X + DX,
+    NewY = Y + DY,
+    NewZ = Z + DZ,
     {NewX, NewY, NewZ}.
-migrate(New, Delta) -> New + Delta.
 
-% Chose a random x and y movement from -1,0,1
+%% Chose a random x and y movement from -1,0,1
 random_direction() -> random_direction(1).
-random_direction(Step) -> {random_int(-Step, Step), random_int(-Step, Step)}.
+random_direction(Step) ->
+    {random_int(-Step, Step), random_int(-Step, Step), random_int(-Step, Step)}.
 
 %%  Stochastic decision making
-% when two drops are at the same site
+%% when two drops are at the same site
 handle_collision(_Us, _Them) ->
     ok.
-% Location of a new drop
+
+%% Location of a new drop
 new_position() ->
     {random_int(?GRIDSIZE_X - 1), random_int(?GRIDSIZE_Y - 1)}.
-% Size of a new drop ->
-% http://ga.water.usgs.gov/edu/raindropsizes.html
-% Range 0.001mm, 0.05mm. "Rain" at 0.5mm.
+
+%% Size of a new drop
+%% http://ga.water.usgs.gov/edu/raindropsizes.html
+%% Range 0.001mm, 0.05mm. "Rain" at 0.5mm.
 new_size() ->
     X = gaussian(0.025, 0.006),
     if X =< 0 ->
@@ -63,7 +66,7 @@ new_size() ->
             X
     end.
 
-% Retrieve the state of a drop
+%% Retrieve the state of a drop
 get_state(Pid) ->
     ?TIMEOUT = constants:timeout(),
     Ref = make_ref(),
