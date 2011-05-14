@@ -49,6 +49,12 @@ filter_drops([D|Drops], Local, NonLocal) ->
 
 
 
+add_drop(Drops, NewDrop) ->
+    dict:update(
+    {ok, NewDrops} -> ok;
+    {collision, OldDrops} ->
+        NewDrops = handle_collisions(D, OldDrops)
+end,
 
             case handle_collision(S, get_state(Pid)) of
                 coalesce ->
