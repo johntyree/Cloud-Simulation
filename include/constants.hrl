@@ -1,6 +1,6 @@
--define(GRIDSIZE_X, 3000).
--define(GRIDSIZE_Y, 3000).
--define(GRIDSIZE_Z, 0).
+-define(GRIDSIZE_X, 30).
+-define(GRIDSIZE_Y, 30).
+-define(GRIDSIZE_Z, 1).
 -define(INITIAL_DENSITY, 0.3).
 -define(TIMEOUT, 500).
 
