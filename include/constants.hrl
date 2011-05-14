@@ -58,13 +58,25 @@ random_uniform_nonboundary(L, U) ->
             X
     end.
 
-random_int(U) when is_integer(U), U >= 0 -> random_int(0, U).
-random_int(L, U) when is_integer(U), is_integer(L) -> crypto:rand_uniform(L, U).
+%% Inclusive!
+random_int(U) -> random_int(0, U).
+%% Can't have negatives
+random_int(L, U) when is_integer(L), is_integer(U), L =< U ->
+    crypto:rand_uniform(0, U-L+1) + L.
 
 
 bisect(Int) ->
-    case Int rem 2 of 
+    case Int rem 2 of
         0 -> Left = Right = Int / 2;
-        1 -> Left = 1 + (Right = Int / 2)
+        1 -> Left = 1 + (Right = Int div 2)
     end,
     {Left, Right}.
+
+%% Inclusive! Not like modulo.
+make_periodic(_Val, Min, Max) when Max == Min -> Min;
+make_periodic(Val, Min, Max) when Max < Min -> make_periodic(Val, Max, Min);
+make_periodic(Val, Min, Max) when Min =< Val, Val =< Max -> Val;
+make_periodic(Val, Min, Max) when Val < Min ->
+    make_periodic(Val + (Max - Min + 1), Min, Max);
+make_periodic(Val, Min, Max) when Val > Max ->
+    make_periodic(Val - (Max - Min + 1), Min, Max).
