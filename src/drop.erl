@@ -44,7 +44,9 @@ migrate({X, Y, Z}, {DX, DY, DZ}) ->
 %% Chose a random x and y movement from -1,0,1
 random_direction() -> random_direction(1).
 random_direction(Step) ->
-    {random_int(-Step, Step), random_int(-Step, Step), random_int(-Step, Step)}.
+    {random_int(-Step, Step), random_int(-Step, Step), 0}.
+    %% For 3D, add the Z dimension
+    %{random_int(-Step, Step), random_int(-Step, Step), random_int(-Step, Step)}.
 
 %%  Stochastic decision making
 %% when two drops are at the same site
