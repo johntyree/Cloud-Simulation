@@ -74,12 +74,17 @@ handle_collision(D, OldDrops) when is_list(OldDrops) ->
 %% Attempt to add the new drop to the dict, if drops already present at
 %% that location handle the collision.
 %% Return new dict of drops
-add_drop(Drops, [N|NewDrops]) ->
-    add_drop(add_drop(Drops, N), NewDrops);
-add_drop(Drops, NewDrop) ->
-    NewDrops = dict:append(drop:to_key(NewDrop), fun handle_collision/2,
-        NewDrop, Drops),
-    NewDrops.
+add_drop([N|NewDrops], Drops) ->
+    add_drop(NewDrops, add_drop(N, Drops));
+add_drop({Coord, NewDrop}, Drops) ->
+    case dict:find(Coord, Drops) of
+        {ok, DropList} ->
+            NewDropList = handle_collision(NewDrop, DropList),
+            dict:store(Coord, NewDropList, Drops);
+        error ->
+            dict:store(Coord, [NewDrop], Drops)
+    end.
+
 
 %% Move all drops to their new locations.
 %% Return new dict of drops
