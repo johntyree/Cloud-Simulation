@@ -64,13 +64,12 @@ drop_loop(S = #nodestate{}) ->
     end.
 
 %% When two drops meet, we do something.
-%% Return new dict of drops
-handle_collision(D, OldDrops) -> handle_collision(D, OldDrops, []).
-handle_collision(D, [], Acc) -> [D|Acc];
-handle_collision(D, [OldDrop|OldDrops], NewDrops) ->
+%% dropstate -> [dropstate] -> [dropstate]
+%% Return new list of drops
+handle_collision(D, []) -> D;
+handle_collision(D, OldDrops) when is_list(OldDrops) ->
     %% Phase 1, we just coalesce them and call it a day.
-    NewDrop = drop:coalesce(D, OldDrop),
-    handle_collision(NewDrop, OldDrops, NewDrops).
+    lists:foldl(fun drop:coalesce/2, D, OldDrops).
 
 %% Attempt to add the new drop to the dict, if drops already present at
 %% that location handle the collision.
