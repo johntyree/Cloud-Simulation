@@ -80,3 +80,7 @@ make_periodic(Val, Min, Max) when Val < Min ->
     make_periodic(Val + (Max - Min + 1), Min, Max);
 make_periodic(Val, Min, Max) when Val > Max ->
     make_periodic(Val - (Max - Min + 1), Min, Max).
+
+print_dict(D) ->
+    dict:map(fun(K, V) -> io:format("~p: ~p~n", [K, V]) end, D),
+    ok.
