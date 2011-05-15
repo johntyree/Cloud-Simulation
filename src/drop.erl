@@ -51,10 +51,6 @@ random_direction(Step) ->
 handle_collision(_Us, _Them) ->
     ok.
 
-%% Location of a new drop
-new_position() ->
-    {random_int(?GRIDSIZE_X - 1), random_int(?GRIDSIZE_Y - 1)}.
-
 %% Size of a new drop
 %% http://ga.water.usgs.gov/edu/raindropsizes.html
 %% Range 0.001mm, 0.05mm. "Rain" at 0.5mm.
