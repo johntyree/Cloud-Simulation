@@ -104,7 +104,7 @@ add_drops([N|NewDrops], Drops) ->
     add_drops(NewDrops, add_drop(N, Drops)).
 add_drop({Coord, NewDrop}, Drops) ->
     case dict:find(Coord, Drops) of
-        {ok, DropList} when is_list(DropList) ->
+        {ok, DropList} ->
             NewDropList = handle_collision(NewDrop, DropList),
             dict:store(Coord, NewDropList, Drops);
         error ->
