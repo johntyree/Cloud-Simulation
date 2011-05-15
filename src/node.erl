@@ -39,17 +39,24 @@ drop_loop(S = #nodestate{}) ->
             error_logger:info_report("Recurse with Keepers"),
             drop_loop(S#nodestate{drops = Keep});
 
-        {newdrop, D = #dropstate{}} ->
-            Drops = add_drops(S#nodestate.drops, D),
-            %drop_loop(S = #nodestate{drops = Drops});
-            #nodestate{drops = Drops};
+        {newdrop, D} ->
+            Drops = add_drop(D, S#nodestate.drops),
+            drop_loop(S#nodestate{drops = Drops});
 
         merge ->
             S#nodestate.parent ! S#nodestate.drops,
             exit(merged);
 
-        db ->
-            S#nodestate.parent ! S
+        repopulate ->
+            drop_loop(populate_domain(S));
+        {repopulate, Density} ->
+            drop_loop(populate_domain(S, Density));
+
+        reload ->
+            ?MODULE:drop_loop(S);
+
+        print ->
+            drop_loop(S)
     end.
 
 %% Return nodestate with ~ AREA * INITIAL_DENSITY drops
