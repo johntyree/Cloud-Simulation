@@ -114,6 +114,9 @@ add_drop({Coord, NewDrop}, Drops) ->
 
 %% Move all drops to their new locations.
 %% DropDict -> DropDict
+-spec move_drops(dict()) -> dict().
+-spec move_drops([], any(), dict()) -> dict()
+    ; ([{integer(), integer(), integer()},...], dict(), dict()) -> dict().
 move_drops(Drops) ->
     Coords = dict:fetch_keys(Drops),
     move_drops(Coords, Drops, dict:new()).
