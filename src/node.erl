@@ -6,27 +6,14 @@
 -include_lib("node.hrl").
 -include_lib("drop.hrl").
 
-%% Return nodestate with ~ AREA * INITIAL_DENSITY drops
-populate_domain(S = #nodestate{}) -> populate_domain(S, ?INITIAL_DENSITY).
-populate_domain(S = #nodestate{}, Density) ->
-    XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
-    YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
-    ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
-    %% All permutations means all grid points in the domain in this case.
-    %% Should create AREA * INITIAL_DENSITY drops on average
-    DropList = [{{X,Y,Z}, drop:new()} || X <- XRange, Y <- YRange, Z <- ZRange,
-        Density > random_uniform_nonboundary(0, 1)],
-    S#nodestate{drops = add_drops(DropList, S#nodestate.drops)}.
-
-%% Return nodestate with one drop added, possibly on top of another one
-create_drop(S = #nodestate{}) ->
-    NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
-    S#nodestate{drops = NewDrops}.
-new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
-        Z2}) ->
-    {random_int(X1, X2), random_int(Y1, Y2), random_int(Z1, Z2)}.
+initial_config() ->
+    error_logger:logfile({open, "log"}).
 
 init() -> init(#nodestate{}).
+init(Parent) when is_pid(Parent) -> init(#nodestate{parent = Parent});
+init(S = #nodestate{}) ->
+    initial_config(),
+    drop_loop(S).
 init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
     init(#nodestate{
             x1 = X1,
@@ -37,8 +24,6 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
             z2 = Z2,
             drops = Drops,
             parent = Parent}).
-init(S = #nodestate{}) ->
-    drop_loop(S).
 
 drop_loop(S = #nodestate{}) ->
     receive
@@ -61,6 +46,27 @@ drop_loop(S = #nodestate{}) ->
         db ->
             S#nodestate.parent ! S
     end.
+
+%% Return nodestate with ~ AREA * INITIAL_DENSITY drops
+%% nodestate -> nodestate
+populate_domain(S = #nodestate{}) -> populate_domain(S, ?INITIAL_DENSITY).
+populate_domain(S = #nodestate{}, Density) ->
+    XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
+    YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
+    ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
+    %l All permutations means all grid points in the domain in this case.
+    %% Should create AREA * INITIAL_DENSITY drops on average
+    DropList = [{{X,Y,Z}, drop:new()} || X <- XRange, Y <- YRange, Z <- ZRange,
+        Density > random_uniform_nonboundary(0, 1)],
+    S#nodestate{drops = add_drops(DropList, dict:new())}.
+
+%% Return nodestate with one drop added, possibly on top of another one
+create_drop(S = #nodestate{}) ->
+    NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
+    S#nodestate{drops = NewDrops}.
+new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
+        Z2}) ->
+    {random_int(X1, X2), random_int(Y1, Y2), random_int(Z1, Z2)}.
 
 %% When two drops meet, we do something.
 %% dropstate -> [dropstate] -> [dropstate]
