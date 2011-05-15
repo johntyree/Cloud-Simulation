@@ -84,3 +84,10 @@ make_periodic(Val, Min, Max) when Val > Max ->
 print_dict(D) ->
     dict:map(fun(K, V) -> io:format("~p: ~p~n", [K, V]) end, D),
     ok.
+
+flush() ->
+    receive
+        X -> [X|flush()]
+    after 0 ->
+        []
+    end.
