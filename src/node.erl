@@ -6,6 +6,7 @@
 -include_lib("node.hrl").
 -include_lib("drop.hrl").
 
+%% Return nodestate with ~ AREA * INITIAL_DENSITY drops
 populate_domain(S = #nodestate{}) -> populate_domain(S, ?INITIAL_DENSITY).
 populate_domain(S = #nodestate{}, Density) ->
     XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
@@ -13,11 +14,11 @@ populate_domain(S = #nodestate{}, Density) ->
     ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
     %% All permutations means all grid points in the domain in this case.
     %% Should create AREA * INITIAL_DENSITY drops on average
-    dict:from_list(
-        [{{X,Y,Z}, drop:new()} || X <- XRange, Y <- YRange, Z <- ZRange,
-            Density > random_uniform_nonboundary(0, 1)]).
+    DropList = [{{X,Y,Z}, drop:new()} || X <- XRange, Y <- YRange, Z <- ZRange,
+        Density > random_uniform_nonboundary(0, 1)],
+    S#nodestate{drops = add_drops(DropList, S#nodestate.drops)}.
 
-%% Return state with one drop added, possibly on top of another one
+%% Return nodestate with one drop added, possibly on top of another one
 create_drop(S = #nodestate{}) ->
     NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
     S#nodestate{drops = NewDrops}.
@@ -25,9 +26,7 @@ new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
         Z2}) ->
     {random_int(X1, X2), random_int(Y1, Y2), random_int(Z1, Z2)}.
 
-init() ->
-    S = #nodestate{},
-    init(S#nodestate{drops = populate_domain(S)}).
+init() -> init(#nodestate{}).
 init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
     init(#nodestate{
             x1 = X1,
@@ -51,7 +50,7 @@ drop_loop(S = #nodestate{}) ->
             #nodestate{drops = Keep};
 
         {newdrop, D = #dropstate{}} ->
-            Drops = add_drop(S#nodestate.drops, D),
+            Drops = add_drops(S#nodestate.drops, D),
             %drop_loop(S = #nodestate{drops = Drops});
             #nodestate{drops = Drops};
 
@@ -69,16 +68,18 @@ drop_loop(S = #nodestate{}) ->
 handle_collision(D, []) -> D;
 handle_collision(D, OldDrops) when is_list(OldDrops) ->
     %% Phase 1, we just coalesce them and call it a day.
-    lists:foldl(fun drop:coalesce/2, D, OldDrops).
+    [lists:foldl(fun drop:coalesce/2, D, OldDrops)].
 
 %% Attempt to add the new drop to the dict, if drops already present at
 %% that location handle the collision.
 %% Return new dict of drops
-add_drop([N|NewDrops], Drops) ->
-    add_drop(NewDrops, add_drop(N, Drops));
+%% [Drop] -> DropDict -> DropDict
+add_drops([], Drops) -> Drops;
+add_drops([N|NewDrops], Drops) ->
+    add_drops(NewDrops, add_drop(N, Drops)).
 add_drop({Coord, NewDrop}, Drops) ->
     case dict:find(Coord, Drops) of
-        {ok, DropList} ->
+        {ok, DropList} when is_list(DropList) ->
             NewDropList = handle_collision(NewDrop, DropList),
             dict:store(Coord, NewDropList, Drops);
         error ->
@@ -87,26 +88,64 @@ add_drop({Coord, NewDrop}, Drops) ->
 
 
 %% Move all drops to their new locations.
-%% Return new dict of drops
-move_drops(Drops) -> dict:map(fun(P, D) -> drop:move({P, D}) end, Drops).
+%% DropDict -> DropDict
+move_drops(Drops) ->
+    Coords = dict:fetch_keys(Drops),
+    move_drops(Coords, Drops, dict:new()).
+move_drops([], _, NewDrops) -> NewDrops;
+move_drops([C|Coords], OldDrops, NewDrops) ->
+    %% List of drops at coord C.
+    DropList = dict:fetch(C, OldDrops),
+    %% List of {NewCoord, Drop} to be added
+    MovedDropList = lists:map(fun(D) -> drop:move({C, D}) end, DropList),
+    %% Cumulative dict of new drops
+    NewDropDict = add_drops(MovedDropList, NewDrops),
+    move_drops(Coords, OldDrops, NewDropDict).
+
 
 %% Filter out the drops that have left our domain.
-%% Return {OurDrops, NotOurDrops}
+%% nodestate -> DropDict -> {Local DropDict, Nonlocal DropDict}
 %% If the parent is undefined, boundaries become periodic in all directions for now.
 filter_drops(S = #nodestate{parent = P}, Drops) when P =:= undefined ->
-    {Local, NonLocal} = filter_drops(S, Drops, [], []),
+    io:format("1~n"),
+    {Local, NonLocal} = filter_drops(S, dict:to_list(Drops), [], []),
+    io:format("2~n"),
+    io:format("~p~n", [{Local, NonLocal}]),
     Localized = periodicise_drops(S, NonLocal),
-    {add_drop(Local, Localized), []};
-filter_drops(S = #nodestate{}, Drops) -> filter_drops(S, Drops, [], []).
-filter_drops(_S, [], Local, NonLocal) -> {Local, NonLocal};
+    io:format("3~n"),
+    {add_drops(dict:to_list(Localized), Local), []};
+filter_drops(S = #nodestate{}, Drops) ->
+    io:format("4~n"),
+    filter_drops(S, dict:to_list(Drops), [], []).
+filter_drops(_S, [], Local, NonLocal) ->
+    io:format("5~n"),
+    {dict:from_list(Local), dict:from_list(NonLocal)};
 filter_drops(S, [D|Drops], Local, NonLocal) ->
+    io:format("6~n"),
     case is_local(S, D) of
-        true -> filter_drops(S, Drops, [D|Local], NonLocal);
-        false -> filter_drops(S, Drops, Local, [D|NonLocal])
+        true ->
+            io:format("7~n"),
+            filter_drops(S, Drops, [D|Local], NonLocal);
+        false ->
+            io:format("8~n"),
+            filter_drops(S, Drops, Local, [D|NonLocal])
     end.
 
-periodicise_drops(S, Drops) ->
-    dict:map(fun(D) -> periodicise_drop(S, D) end, Drops).
+
+%% nodestate -> DropDict -> DropDict
+%% TODO: Could be made faster by filtering the dict for local coords first.
+periodicise_drops(S, NewDrops) ->
+    Coords = dict:fetch_keys(NewDrops),
+    periodicise_drops(S, Coords, NewDrops, dict:new()).
+periodicise_drops(_S, [], _, NewDrops) -> NewDrops;
+periodicise_drops(S, [C|Coords], OldDrops, NewDrops) ->
+    %% List of drops at coord C.
+    DropList = dict:fetch(C, OldDrops),
+    %% List of {NewCoord, Drop} to be added
+    MovedDropList = lists:map(fun(D) -> periodicise_drop(S, {C, D}) end, DropList),
+    %% Cumulative dict of new drops
+    NewDropDict = add_drops(MovedDropList, NewDrops),
+    periodicise_drops(S, Coords, OldDrops, NewDropDict).
 periodicise_drop(
     #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
     {{X, Y, Z}, Drop}) ->
@@ -117,11 +156,12 @@ periodicise_drop(
 
 
 %% Return true if the drop D is in domain of S, else false.
+%% nodestate -> {{Coords}, Drop} -> Bool
 is_local(
     #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
     {{X, Y, Z}, _Drop}) ->
-    (X < X1) or (Y < Y1) or (Z < Z1)
-    or (X > X2) or (Y > Y2) or (Z > Z2).
+    not ((X < X1) or (Y < Y1) or (Z < Z1)
+        or (X > X2) or (Y > Y2) or (Z > Z2)).
 
 %% Split our domain into 2^dimentions new domains by spawning new drop nodes.
 %% This process becomes a router node with the new nodes as children.
