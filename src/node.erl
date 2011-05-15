@@ -26,13 +26,18 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
             parent = Parent}).
 
 drop_loop(S = #nodestate{}) ->
+    error_logger:info_report(S),
+    flush(),
     receive
         move ->
+            error_logger:info_report("Movin"),
             Drops = move_drops(S#nodestate.drops),
+            error_logger:info_report("Moved: ~p~n~n Filterin'", [Drops]),
             {Keep, Transfer} = filter_drops(S, Drops),
+            error_logger:info_report("Filtered:~n~p~p~n", [Keep, Transfer]),
             S#nodestate.parent ! Transfer,
-            %drop_loop(S = #nodestate{drops = Keep});
-            #nodestate{drops = Keep};
+            error_logger:info_report("Recurse with Keepers"),
+            drop_loop(S#nodestate{drops = Keep});
 
         {newdrop, D = #dropstate{}} ->
             Drops = add_drops(S#nodestate.drops, D),
@@ -73,6 +78,12 @@ new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
 %% Return new list of drops
 handle_collision(D, []) -> D;
 handle_collision(D, OldDrops) when is_list(OldDrops) ->
+    error_logger:info_report("Handle collision between ~p and ~p", [D,
+            OldDrops]),
+    io:format("Handle collision between ~p and ~p", [D,
+            OldDrops]),
+    io:format("~p and ~p", [is_list(D),
+            is_list(OldDrops)]),
     %% Phase 1, we just coalesce them and call it a day.
     [lists:foldl(fun drop:coalesce/2, D, OldDrops)].
 
@@ -82,6 +93,7 @@ handle_collision(D, OldDrops) when is_list(OldDrops) ->
 %% [Drop] -> DropDict -> DropDict
 add_drops([], Drops) -> Drops;
 add_drops([N|NewDrops], Drops) ->
+    io:format("add_drops([~p|~p], ~p)..", [N, NewDrops, Drops]),
     add_drops(NewDrops, add_drop(N, Drops)).
 add_drop({Coord, NewDrop}, Drops) ->
     case dict:find(Coord, Drops) of
@@ -113,27 +125,29 @@ move_drops([C|Coords], OldDrops, NewDrops) ->
 %% nodestate -> DropDict -> {Local DropDict, Nonlocal DropDict}
 %% If the parent is undefined, boundaries become periodic in all directions for now.
 filter_drops(S = #nodestate{parent = P}, Drops) when P =:= undefined ->
-    io:format("1~n"),
+    io:format("Parent Undefined~n"),
     {Local, NonLocal} = filter_drops(S, dict:to_list(Drops), [], []),
-    io:format("2~n"),
+    io:format("Filtered Drops:~n"),
     io:format("~p~n", [{Local, NonLocal}]),
+    io:format("Periodicisin' ~p~n", [{Local, NonLocal}]),
     Localized = periodicise_drops(S, NonLocal),
-    io:format("3~n"),
+    io:format("Periodicised:~n~p~n", [Localized]),
+    io:format("Adding to keepers~n"),
     {add_drops(dict:to_list(Localized), Local), []};
 filter_drops(S = #nodestate{}, Drops) ->
-    io:format("4~n"),
+    io:format("Got drop dict, making list~n"),
     filter_drops(S, dict:to_list(Drops), [], []).
 filter_drops(_S, [], Local, NonLocal) ->
-    io:format("5~n"),
+    io:format("List empty~n"),
     {dict:from_list(Local), dict:from_list(NonLocal)};
 filter_drops(S, [D|Drops], Local, NonLocal) ->
-    io:format("6~n"),
+    io:format("Testing Drop:"),
     case is_local(S, D) of
         true ->
-            io:format("7~n"),
+            io:format("true ~p~n", [D]),
             filter_drops(S, Drops, [D|Local], NonLocal);
         false ->
-            io:format("8~n"),
+            io:format("false ~p~n", [D]),
             filter_drops(S, Drops, Local, [D|NonLocal])
     end.
 
