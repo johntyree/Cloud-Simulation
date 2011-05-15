@@ -6,7 +6,8 @@
 -include_lib("node.hrl").
 -include_lib("drop.hrl").
 
-populate_domain(S = #nodestate{}) ->
+populate_domain(S = #nodestate{}) -> populate_domain(S, ?INITIAL_DENSITY).
+populate_domain(S = #nodestate{}, Density) ->
     XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
     YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
     ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
@@ -14,7 +15,15 @@ populate_domain(S = #nodestate{}) ->
     %% Should create AREA * INITIAL_DENSITY drops on average
     dict:from_list(
         [{{X,Y,Z}, drop:new()} || X <- XRange, Y <- YRange, Z <- ZRange,
-            ?INITIAL_DENSITY > random_uniform_nonboundary(0, 1)]).
+            Density > random_uniform_nonboundary(0, 1)]).
+
+%% Return state with one drop added, possibly on top of another one
+create_drop(S = #nodestate{}) ->
+    NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
+    S#nodestate{drops = NewDrops}.
+new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
+        Z2}) ->
+    {random_int(X1, X2), random_int(Y1, Y2), random_int(Z1, Z2)}.
 
 init() ->
     S = #nodestate{},
