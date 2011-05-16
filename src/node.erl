@@ -78,7 +78,7 @@ populate_domain(S = #nodestate{}, Density) ->
     ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
     %l All permutations means all grid points in the domain in this case.
     %% Should create AREA * INITIAL_DENSITY drops on average
-    DropList = [{{X,Y,Z}, drop:new()} || X <- XRange, Y <- YRange, Z <- ZRange,
+    DropList = [{{X,Y,Z}, [drop:new()]} || X <- XRange, Y <- YRange, Z <- ZRange,
         Density > random_uniform_nonboundary(0, 1)],
     S#nodestate{drops = add_drops(DropList, dict:new())}.
 
@@ -93,23 +93,31 @@ new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
 %% When two drops meet, we do something.
 %% dropstate -> [dropstate] -> [dropstate]
 %% Return new list of drops
-handle_collision(D, []) -> D;
+handle_collision(D, []) -> [D];
 handle_collision(D, OldDrops) when is_list(OldDrops) ->
     % * io:format("Handle collision between ~p and ~p ", [D, OldDrops]),
     % * io:format("(~p and ~p)~n", [is_list(D), is_list(OldDrops)]),
     %% Phase 1, we just coalesce them and call it a day.
     [lists:foldl(fun drop:coalesce/2, D, OldDrops)].
 
-%% Attempt to add the new drop to the dict, if drops already present at
-%% that location handle the collision.
+%% Attempt to add a list of new drops to the dict.
+%% if drops already present at the locations, handle the collisions.
 %% Return new dict of drops
-%% [Drop] -> DropDict -> DropDict
-add_drops([], Drops) -> Drops;
-add_drops([N|NewDrops], Drops) ->
-    io:format("add_drops([~p|~p], ~p)..", [N, NewDrops, Drops]),
-    add_drops(NewDrops, add_drop(N, Drops)).
-add_drop({Coord, NewDrop}, Drops) ->
-    case dict:find(Coord, Drops) of
+%% [{Coord, [Drop]}] -> DropDict -> DropDict
+add_drops([], DropDict) -> DropDict;
+add_drops([{_Coord, []}|OtherDs], DropDict) -> add_drops(OtherDs, DropDict);
+add_drops([{Coord, [D|Ds]}|OtherDs], DropDict) ->
+    NewDrops = [{Coord, Ds}|OtherDs],
+    add_drops(NewDrops, add_drop({Coord, D}, DropDict));
+add_drops([{Coord, D}|OtherDs], DropDict) ->
+    add_drops(OtherDs, add_drop({Coord, D}, DropDict)).
+
+%% Attempt to add the new drop to the dict.
+%% if drops already present at that location handle the collision.
+%% Return new dict of drops
+%% {Coord, Drop} -> DropDict -> DropDict
+add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
+    case dict:find(Coord, DropDict) of
         {ok, DropList} ->
             NewDropList = handle_collision(NewDrop, DropList),
             % * io:format("Replacing ~p with ~p~n", [DropList, NewDropList]),
