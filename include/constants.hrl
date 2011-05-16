@@ -1,7 +1,8 @@
--define(GRIDSIZE_X, 30).
--define(GRIDSIZE_Y, 30).
+-define(GRIDSIZE_X, 5).
+-define(GRIDSIZE_Y, 5).
 -define(GRIDSIZE_Z, 1).
--define(INITIAL_DENSITY, 0.3).
+-define(INITIAL_DENSITY, 0.6).
+-define(RELATIVE_HUMIDITY, ?INITIAL_DENSITY).
 -define(TIMEOUT, 500).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
@@ -90,4 +91,10 @@ flush() ->
         X -> [X|flush()]
     after 0 ->
         []
+    end.
+flush(N) when is_integer(N) -> flush(N, []).
+flush(0, Acc) -> lists:reverse(Acc);
+flush(N, Acc) ->
+    receive
+        X -> flush(N-1, [X|Acc])
     end.
