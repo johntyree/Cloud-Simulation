@@ -32,9 +32,12 @@ drop_loop(S = #nodestate{}) ->
         move ->
             Drops = move_drops(S#nodestate.drops),
             {Keep, Transfer} = filter_drops(S, Drops),
-            if is_pid(S#nodestate.parent) and Transfer =/= [] ->
-                    S#nodestate.parent ! Transfer;
-                true -> ok
+            if is_pid(S#nodestate.parent) ->
+                    if Transfer =/= [] ->
+                            S#nodestate.parent ! Transfer;
+                        true -> ok
+                    end,
+                    S#nodestate.parent ! ok
             end,
             drop_loop(S#nodestate{drops = Keep});
 

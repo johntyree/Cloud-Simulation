@@ -20,12 +20,13 @@ run(0, Cloud) ->
 run(N, Cloud) when is_integer(N) ->
     Cloud ! move,
     Cloud ! {size, self()},
-    receive
-        %% Keep going until max iterations are reached
-        X when X > 1 ->
+    flush(1), %% The 'ok' message after moving the drops.
+    receive %% the size
+        %% Keep going until max iterations are reached or only one drop left
+        X when is_integer(X) and X > 1 ->
             %error_logger:info_report(io_lib:format("~p", [X])),
             run(N - 1, Cloud);
-        _X ->
+        _ ->
             %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
             run(0, Cloud)
     end.
