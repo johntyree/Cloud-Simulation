@@ -34,10 +34,15 @@ drop_loop(S = #nodestate{}) ->
             {Keep, Transfer} = filter_drops(S, Drops),
             if is_pid(S#nodestate.parent) ->
                     if Transfer =/= [] ->
-                            S#nodestate.parent ! Transfer;
+                            S#nodestate.parent ! {route_drops, Transfer};
                         true -> ok
                     end,
-                    S#nodestate.parent ! ok
+                    S#nodestate.parent ! ok;
+                true -> ok
+            end,
+            if is_pid(S#nodestate.deity) ->
+                    S#nodestate.deity ! ok;
+                true -> ok
             end,
             drop_loop(S#nodestate{drops = Keep});
 
