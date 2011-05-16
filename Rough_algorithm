@@ -1,33 +1,38 @@
 how do we do this?
 
-receive begin time step message from parent
+spawn node
+MAYBE populate node stochastically
+MAYBE send drops to node
+
+node waits for messages
+
+tell node to simulate a timestep
+
+LOOP BEGIN
+receive msg
 
 # simultaneous motion
-for each drop
-    move it
-   if new new location is out of bounds
-       send to parent.
-       delete drop
+if msg is move
+    for each drop
+        move it
+    # process drop physics
+    if two drops are at the same location, test for coalescence
+        if they coalesce
+            combine them
+        otherwise
+            leave them 'on top of each other' as a list
+    separate drops that local and those that are now out of bounds
+        send out of bounds drops to parent
+        delete out of bounds drops
+    send ok to parent
+    loop
 
 #import/export drops
-after all drops have moved
-    send ok to parent
-    receive from parent
-        either ok or a drop
-        if drop
-            add to location list and receive again
-        if ok move on
+if msg is newdrop
+    add to drop list
+    loop
 
-# process drop physics
-if two drops are at the same location, test for coalescence
-    if they coalesce
-        combine them
-    otherwise
-        leave them 'on top of each other'
-
-flush()  (should not be necessary)
-send done to parent
-End of Time Step
+LOOP END
 
 
 don't do this yet
