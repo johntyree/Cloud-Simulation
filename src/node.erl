@@ -6,14 +6,10 @@
 -include_lib("node.hrl").
 -include_lib("drop.hrl").
 
-initial_config() ->
-    error_logger:logfile({open, "log"}).
+%initial_config() ->
+    %error_logger:logfile({open, "log_node"}).
 
 init() -> init(#nodestate{}).
-init(Parent) when is_pid(Parent) -> init(#nodestate{parent = Parent});
-init(S = #nodestate{}) ->
-    initial_config(),
-    drop_loop(S).
 init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
     init(#nodestate{
             x1 = X1,
@@ -23,7 +19,12 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
             y2 = Y2,
             z2 = Z2,
             drops = Drops,
-            parent = Parent}).
+            parent = Parent
+        }).
+init(Parent) when is_pid(Parent) -> init(#nodestate{deity = Parent});
+init(S = #nodestate{}) ->
+    %initial_config(),
+    drop_loop(S).
 
 drop_loop(S = #nodestate{}) ->
     error_logger:info_report(S),
