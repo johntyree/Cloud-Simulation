@@ -6,5 +6,7 @@
         y2 = ?GRIDSIZE_Y - 1,
         z2 = ?GRIDSIZE_Z - 1,
         drops = dict:new(),
-        parent}).
+        parent,
+        deity
+    }).
 
