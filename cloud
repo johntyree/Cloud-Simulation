@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd ebin
+erl -noshell -run cloud_simulation main $@

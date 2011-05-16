@@ -3,26 +3,35 @@
 
 -include_lib("constants.hrl").
 
-main(Args) ->
+main([N]) ->
+    {Iters, []} = string:to_integer(N),
     initial_config(),
-    L = deity:init(Args),
-
-    [io:format("~p ~p ~p~n", [X, Y, Z]) || {{X, Y}, {_, Z}} <- L],
-    erlang:halt(0).
+    Cloud = spawn(node, init, [self()]),
+    Cloud ! repopulate,
+    run(Iters, Cloud),
+    init:stop().
 
 initial_config() ->
     error_logger:logfile({open, "log"}).
 
-run(0) ->
-    {X, Y} = drop:new_position(),
-    io:format("~p ~p~n", [X, Y]),
-    %io:format("~p~n", [drop:new_size()]),
-    %io:format("~p~n", [gaussian(100, 4.1)]),
-    %io:format("~p~n", [random:uniform()]),
-    erlang:halt(0);
-run(N) ->
-    {X, Y} = drop:new_position(),
-    io:format("~p ~p ", [X, Y]),
-    %io:format("~p ", [gaussian(100, 4.1)]),
-    %io:format("~p ", [random:uniform()]),
-    run(N-1).
+run(0, Cloud) ->
+    Cloud ! {die, self()},
+    wait(Cloud);
+run(N, Cloud) when is_integer(N) ->
+    Cloud ! move,
+    Cloud ! {size, self()},
+    receive
+        %% Keep going until max iterations are reached
+        X when X > 1 ->
+            %error_logger:info_report(io_lib:format("~p", [X])),
+            run(N - 1, Cloud);
+        _X ->
+            %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
+            run(0, Cloud)
+    end.
+
+wait(Cloud) ->
+    receive
+        {ok_im_dead, Cloud} -> ok;
+        _ -> wait(Cloud)
+    end.
