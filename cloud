@@ -1,4 +1,7 @@
 #!/bin/sh
 
 cd ebin
-erl -noshell -run cloud_simulation main $@
+
+ARGS=${@:-"100000"}
+erl -noshell -run cloud_simulation main $ARGS
+
