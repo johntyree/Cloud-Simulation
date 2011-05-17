@@ -5,3 +5,7 @@ cd ebin
 ARGS=${@:-"100000"}
 erl -noshell -run cloud_simulation main $ARGS
 
+cd - > /dev/null
+
+priv/parse_log.pl < ebin/log > data/run
+cp data/run data/run_$(date +%s)
