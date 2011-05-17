@@ -8,3 +8,4 @@ gsl/
 erl_crash.dump
 ebin/
 .exrc
+data/
