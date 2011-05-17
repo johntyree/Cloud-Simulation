@@ -12,12 +12,17 @@ main([N]) ->
     init:stop().
 
 initial_config() ->
-    error_logger:logfile({open, "log"}).
+    error_logger:logfile({open, "log"}),
+    error_logger:tty(false).
 
 run(0, Cloud) ->
     Cloud ! {die, self()},
     wait(Cloud);
 run(N, Cloud) when is_integer(N) ->
+    if N rem 5 =:= 0 ->
+            io:format("~p ", [N]);
+        true -> ok
+    end,
     Cloud ! move,
     Cloud ! {size, self()},
     flush(1), %% The 'ok' message after moving the drops.
