@@ -110,8 +110,11 @@ handle_collision(D, []) -> [D];
 handle_collision(D, OldDrops) when is_list(OldDrops) ->
     % * io:format("Handle collision between ~p and ~p ", [D, OldDrops]),
     % * io:format("(~p and ~p)~n", [is_list(D), is_list(OldDrops)]),
-    %% Phase 1, we just coalesce them and call it a day.
-    [lists:foldl(fun drop:coalesce/2, D, OldDrops)].
+    %% Phase 1, we just coalesce them and call it a day
+    P1 = [lists:foldl(fun drop:coalesce/2, D, OldDrops)],
+    %% Phase 2, if a drop is too big, it may split into two
+    P2 = lists:flatmap(fun drop:split/1, P1),
+    P2.
 
 %% Attempt to add a list of new drops to the dict.
 %% if drops already present at the locations, handle the collisions.
@@ -133,11 +136,16 @@ add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
     case dict:find(Coord, DropDict) of
         {ok, DropList} ->
             NewDropList = handle_collision(NewDrop, DropList),
+            %% This SHOULD be the only time that a drop can grow, so we will
+            %% only test for size here.
+            %% TODO
             % * io:format("Replacing ~p with ~p~n", [DropList, NewDropList]),
-            dict:store(Coord, NewDropList, DropDict);
+            NewDrops = dict:store(Coord, NewDropList, DropDict),
+            NewDrops;
         error ->
             % * io:format("Storing ~p~n", [[NewDrop]]),
-            dict:store(Coord, [NewDrop], DropDict)
+            NewDrops = dict:store(Coord, [NewDrop], DropDict),
+            NewDrops
     end.
 
 

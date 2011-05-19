@@ -36,7 +36,7 @@ LOOP END
 
 
 don't do this yet
-#if a drop is too big
-    #stochastically split it into two which are now 'on top of each other'
+if a drop is too big
+    stochastically split it into two which are now 'on top of each other'
 
 

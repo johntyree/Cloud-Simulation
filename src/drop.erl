@@ -14,9 +14,24 @@ coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
     NewSize = radius(volume(S1#dropstate.size) + volume(S2#dropstate.size)),
     S1#dropstate{size = NewSize}.
 
+%% Take any size drop, return a list of either one or two drops depending on
+%% size and probability to split.
+% dropstate -> [dropstate]
 split(S = #dropstate{size = Size}) ->
-    NewSize = Size / 2,
-    {S#dropstate{size = NewSize}, S#dropstate{size = NewSize}}.
+    case it_splits(Size) of
+        true ->
+            NewSize = volume(radius(Size) / 2),
+            [S#dropstate{size = NewSize}, S#dropstate{size = NewSize}];
+        false ->
+            [S#dropstate{size = Size}]
+    end.
+
+%% Return true if the drop splits, based on stochastically based on size.
+%% int -> bool
+it_splits(Size) when is_number(Size), Size =< ?HALF_SPLIT_SIZE - 1 -> false;
+it_splits(Size) when is_number(Size), Size >= 0 ->
+    1 - (1 / (1 + math:pow(1 - ?HALF_SPLIT_SIZE + Size, ?SPLIT_STEEPNESS)))
+    > random_uniform_nonboundary(0,1).
 
 move({P, D}) ->
     NewPosition = migrate(P, random_direction()),
