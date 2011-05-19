@@ -1,5 +1,5 @@
--define(GRIDSIZE_X, 5).
--define(GRIDSIZE_Y, 5).
+-define(GRIDSIZE_X, 100).
+-define(GRIDSIZE_Y, 100).
 -define(GRIDSIZE_Z, 1).
 -define(INITIAL_DENSITY, 0.6).
 -define(RELATIVE_HUMIDITY, ?INITIAL_DENSITY).
