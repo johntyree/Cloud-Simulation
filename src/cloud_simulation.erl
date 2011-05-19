@@ -12,7 +12,7 @@ main([N]) ->
     init:stop().
 
 initial_config() ->
-    error_logger:logfile({open, "log"}),
+    %error_logger:logfile({open, "log"}),
     error_logger:tty(false).
 
 run(0, Cloud) ->

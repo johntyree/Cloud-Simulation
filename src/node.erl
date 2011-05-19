@@ -24,10 +24,13 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
 init(Parent) when is_pid(Parent) -> init(#nodestate{deity = Parent});
 init(S = #nodestate{}) ->
     %initial_config(),
+    {ok, F} = file:open("log", [write]),
+    group_leader(F, self()),
     drop_loop(S).
 
 drop_loop(S = #nodestate{}) ->
-    error_logger:info_report(io_lib:format("~p", [dict:to_list(S#nodestate.drops)])),
+    %error_logger:info_report(io_lib:format("~p", [dict:to_list(S#nodestate.drops)])),
+    io:format("~w~n", [dict:to_list(S#nodestate.drops)]),
     receive
         move ->
             Drops = move_drops(S#nodestate.drops),
@@ -58,8 +61,10 @@ drop_loop(S = #nodestate{}) ->
             exit(merged);
 
         {die, Pid} ->
-            error_logger:info_report(io_lib:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)])),
-            Pid ! {ok_im_dead, self()};
+            %error_logger:info_report(io_lib:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)])),
+            io:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)]),
+            Pid ! {ok_im_dead, self()},
+            ok;
 
         repopulate ->
             drop_loop(populate_domain(S));
