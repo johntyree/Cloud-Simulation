@@ -20,7 +20,7 @@ run(0, Cloud) ->
     wait(Cloud);
 run(N, Cloud) when is_integer(N) ->
     if N rem 5 =:= 0 ->
-            io:format("~p ", [N]);
+            io:format("~n~p ", [N]);
         true -> ok
     end,
     Cloud ! move,
@@ -30,14 +30,17 @@ run(N, Cloud) when is_integer(N) ->
         %% Keep going until max iterations are reached or only one drop left
         X when is_integer(X) and (X > 1) ->
             %error_logger:info_report(io_lib:format("~p", [X])),
+            io:format("~p ", [X]),
             run(N - 1, Cloud);
-        _X ->
+        X ->
             %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
+            io:format("Got ~p, Sending death message.~n", [X]),
             run(0, Cloud)
     end.
 
 wait(Cloud) ->
     receive
         {ok_im_dead, Cloud} -> ok;
-        _ -> wait(Cloud)
+        X -> io:format("~p ", [X]),
+            wait(Cloud)
     end.
