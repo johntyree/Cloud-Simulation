@@ -35,7 +35,7 @@ run(N, Cloud) when is_integer(N) ->
             run(N - 1, Cloud);
         X ->
             %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
-            io:format("Got ~p, Sending death message.~n", [X]),
+            io:format("~nGot ~p, Sending death message.~n", [X]),
             run(0, Cloud)
     end.
 
