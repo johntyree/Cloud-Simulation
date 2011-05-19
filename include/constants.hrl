@@ -92,9 +92,20 @@ flush() ->
     after 0 ->
         []
     end.
-flush(N) when is_integer(N) -> flush(N, []).
-flush(0, Acc) -> lists:reverse(Acc);
-flush(N, Acc) ->
+flush(N) when is_integer(N) -> flush(N, false, []).
+flush(N, print) when is_integer(N) -> flush(N, print, []);
+flush(N, _) when is_integer(N) -> flush(N, false, []).
+flush(0, _, Acc) -> lists:reverse(Acc);
+flush(N, print, Acc) ->
     receive
-        X -> flush(N-1, [X|Acc])
+        X ->
+            io:format("~p ", [X]),
+            flush(N-1, print, [X|Acc])
+    end;
+flush(N, Flag, Acc) ->
+    receive
+        X -> flush(N-1, Flag, [X|Acc])
     end.
+
+area(Radius) when is_number(Radius) -> math:pi() * Radius * Radius.
+radius(Area) when is_number(Area) -> math:sqrt(Area / math:pi()).
