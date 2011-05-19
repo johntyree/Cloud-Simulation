@@ -107,5 +107,5 @@ flush(N, Flag, Acc) ->
         X -> flush(N-1, Flag, [X|Acc])
     end.
 
-area(Radius) when is_number(Radius) -> math:pi() * Radius * Radius.
-radius(Area) when is_number(Area) -> math:sqrt(Area / math:pi()).
+radius(Volume) when is_number(Volume) -> math:sqrt(0.75 * Volume / math:pi()).
+volume(Radius) when is_number(Radius) -> 4/3 * math:pi() * Radius * Radius.

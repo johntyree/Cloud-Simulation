@@ -11,7 +11,7 @@ new() ->
     #dropstate{size = Size}.
 
 coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
-    NewSize = S1#dropstate.size + S2#dropstate.size,
+    NewSize = radius(volume(S1#dropstate.size) + volume(S2#dropstate.size)),
     S1#dropstate{size = NewSize}.
 
 split(S = #dropstate{size = Size}) ->
@@ -22,9 +22,7 @@ move({P, D}) ->
     NewPosition = migrate(P, random_direction()),
     {NewPosition, D}.
 
-
 %coords(S = #dropstate{x = X, y = Y, z = Z}) -> {X, Y, Z}.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%                   %%
