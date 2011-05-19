@@ -9,7 +9,8 @@ main([N]) ->
     Cloud = spawn(node, init, [self()]),
     Cloud ! repopulate,
     run(Iters, Cloud),
-    init:stop().
+    init:stop(),
+    ok.
 
 initial_config() ->
     %error_logger:logfile({open, "log"}),
