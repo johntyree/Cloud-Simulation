@@ -35,7 +35,6 @@ init(S = #nodestate{}) ->
 drop_loop(S = #nodestate{}) ->
     %error_logger:info_report(io_lib:format("~p", [dict:to_list(S#nodestate.drops)])),
     %io:format("~w~n", [dict:to_list(S#nodestate.drops)]),
-    io:format("~w~n", [S#nodestate.drops]),
     receive
         move ->
             Drops = move_drops(S#nodestate.drops),
@@ -52,6 +51,7 @@ drop_loop(S = #nodestate{}) ->
                     S#nodestate.deity ! ok;
                 true -> ok
             end,
+            io:format("~w~n", [S#nodestate.drops]),
             drop_loop(S#nodestate{drops = Keep});
 
         {newdrop, D} ->
