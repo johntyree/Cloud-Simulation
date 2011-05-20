@@ -19,7 +19,7 @@ coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
 split(S = #dropstate{size = Size}) ->
     case it_splits(Size) of
         true ->
-            NewSize = volume(radius(Size) / 2),
+            NewSize = radius(volume(Size) / 2),
             [S#dropstate{size = NewSize}, S#dropstate{size = NewSize}];
         false ->
             [S#dropstate{size = Size}]
