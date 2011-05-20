@@ -6,6 +6,7 @@
 -define(HALF_SPLIT_SIZE, 1.5).
 -define(SPLIT_STEEPNESS, 3.5).
 %% Sigmoid model f(x) = 1 - 1/(1 + (1 - splitsize + dropsize)^steepness
+-define(FINAL_DROP_COUNT, 150).
 -define(TIMEOUT, 500).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
@@ -52,8 +53,6 @@ gaussian(Mu, Sigma) ->
     end.
 
 random_uniform_nonboundary(L, U) ->
-    <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
-    random:seed(A, B, C),
     X = (U - L) * random:uniform() + L,
     %crypto:random_bytes
     if L == X; U == X -> %% To match integers
@@ -66,7 +65,8 @@ random_uniform_nonboundary(L, U) ->
 random_int(U) -> random_int(0, U).
 %% Can't have negatives
 random_int(L, U) when is_integer(L), is_integer(U), L =< U ->
-    crypto:rand_uniform(0, U-L+1) + L.
+    %crypto:rand_uniform(0, U-L+1) + L.
+    random:uniform(U-L+1) + (L-1).
 
 
 bisect(Int) ->
@@ -112,3 +112,6 @@ flush(N, Flag, Acc) ->
 
 radius(Volume) when is_number(Volume) -> math:sqrt(0.75 * Volume / math:pi()).
 volume(Radius) when is_number(Radius) -> 4/3 * math:pi() * Radius * Radius.
+
+percent_true(X) ->
+    length([ true || true <- [ X() || _ <- lists:seq(1,1000)]]) / 1000.
