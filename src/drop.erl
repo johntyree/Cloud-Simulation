@@ -43,8 +43,11 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
 %% Size of a new drop
 %% http://ga.water.usgs.gov/edu/raindropsizes.html
 %% Range 0.001mm, 0.05mm. "Rain" at 0.5mm.
+%% Changing this to have larger drop sizes initially. Otherwise we don't get
+%% there without ENORMOUS domains
 new_size() ->
-    X = gaussian(0.025, 0.006),
+    %X = gaussian(0.025, 0.006),
+    X = gaussian(0.50, 0.006),
     if X =< 0 ->
             new_size();
         true ->
