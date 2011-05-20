@@ -6,14 +6,16 @@ use warnings;
 # my $header = '=INFO REPORT==== \d+-\w+-\d+::\d+:\d+:\d+ ===';
 
 while (<stdin>) {
-    if ($_ !~ /{(\d+),(\d+),(\d+)},\[(.*?)\]}/g) {
+    if ($_ !~ /\[{\d+,\d+,\d+},{.*?}\]/) {
         next;
     }
-    while ($_ =~ /{(\d+),(\d+),(\d+)},\[(.*?)\]}/g) {
+    while ($_ =~ /\[{(\d+),(\d+),(\d+)},([^]]+)\]/g) {
         my $coords = "$1 $2";
         my $drops = $4;
-        $drops =~ s/{dropstate,([\d.]+)},?/$1 /g;
-        my @drops = split " ",$drops;
+        #print $coords." ".$drops."\n";
+
+        # Array of dropstate sizes
+        my @drops = ($drops =~ /{dropstate,([\d.]+)}/g);
         foreach (@drops) {
             print $coords." $_ ";
         }
