@@ -69,12 +69,24 @@ drop_loop(S = #nodestate{}) ->
             %error_logger:info_report(io_lib:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)])),
             %io:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)]),
             Pid ! {ok_im_dead, self()},
-            ok;
+            exit(died);
 
         repopulate ->
-            drop_loop(populate_domain(S));
+            NewState = populate_domain(S),
+            drop_loop(NewState);
         {repopulate, Density} ->
-            drop_loop(populate_domain(S, Density));
+            NewState = populate_domain(S, Density),
+            drop_loop(NewState);
+
+        info ->
+            if is_pid(S#nodestate.parent) ->
+                    S#nodestate.parent ! info(S);
+                true -> ok
+            end,
+            if is_pid(S#nodestate.deity) ->
+                    S#nodestate.deity ! info(S);
+                true -> ok
+            end;
 
         reload ->
             ?MODULE:drop_loop(S);
@@ -99,6 +111,18 @@ populate_domain(S = #nodestate{}, Density) ->
     DropList = [{{X,Y,Z}, [drop:new()]} || X <- XRange, Y <- YRange, Z <- ZRange,
         Density > random_uniform_nonboundary(0, 1)],
     S#nodestate{drops = add_drops(DropList, dict:new())}.
+
+info(S) ->
+    #nodeinfo{
+        volume = cumulative_volume(S),
+        size = dict:size(S)
+    }.
+
+cumulative_volume(#nodestate{drops = Dropdict}) ->
+    %Coords = dict:fetch_keys(Dropdict),
+    Drop = dict:fold(fun(_, Ds, D) -> lists:foldl(fun drop:coalesce/2, D,
+                    Ds) end, drop:new(0), Dropdict),
+    Drop#dropstate.size.
 
 %% Return nodestate with one drop added, possibly on top of another one
 create_drop(S = #nodestate{}) ->

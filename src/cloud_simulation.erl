@@ -2,12 +2,23 @@
 -compile(export_all). %% Probably replace with -export([funcs])
 
 -include_lib("constants.hrl").
+-include_lib("node.hrl").
 
 main([N]) ->
     {Iters, []} = string:to_integer(N),
     initial_config(),
-    Cloud = spawn(node, init, [self()]),
+    Cloud = spawn_link(node, init, [self()]),
     Cloud ! repopulate,
+    Cloud ! info,
+    receive
+        ok -> ok;
+        #nodeinfo{volume = Volume} when Volume < 4 * ?HALF_SPLIT_SIZE ->
+            io:format("Cumulative Water Volume: ~pmm³~n", [Volume]),
+            io:format("Not enough water!~n"),
+            erlang:halt(1);
+        #nodeinfo{volume = Volume} ->
+            io:format("Cumulative Water Volume: ~pmm³~n", [Volume])
+    end,
     run(Iters, Cloud),
     %fprof:apply(fun run/2, [Iters, Cloud]),
     %fprof:profile(),

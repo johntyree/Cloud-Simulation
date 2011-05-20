@@ -10,3 +10,8 @@
         deity
     }).
 
+-record(nodeinfo, {
+        state = #nodestate{},
+        size,
+        volume
+    }).
