@@ -153,7 +153,7 @@ add_drops([{_Coord, []}|OtherDs], DropDict) -> add_drops(OtherDs, DropDict);
 add_drops([{Coord, [D|Ds]}|OtherDs], DropDict) ->
     NewDrops = [{Coord, Ds}|OtherDs],
     add_drops(NewDrops, add_drop({Coord, D}, DropDict));
-add_drops([{Coord, D}|OtherDs], DropDict) ->
+add_drops([{Coord, D}|OtherDs], DropDict) when is_tuple(Coord) ->
     add_drops(OtherDs, add_drop({Coord, D}, DropDict)).
 
 %% Attempt to add the new drop to the dict.
