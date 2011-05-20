@@ -2,7 +2,7 @@
 
 cd ebin
 
-ARGS=${@:-"100000"}
+ARGS=${@:-"5000"}
 erl -noshell -run cloud_simulation main $ARGS
 
 cd - > /dev/null
