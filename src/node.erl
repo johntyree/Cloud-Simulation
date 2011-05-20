@@ -112,10 +112,10 @@ populate_domain(S = #nodestate{}, Density) ->
         Density > random_uniform_nonboundary(0, 1)],
     S#nodestate{drops = add_drops(DropList, dict:new())}.
 
-info(S) ->
+info(S = #nodestate{}) ->
     #nodeinfo{
         volume = cumulative_volume(S),
-        size = dict:size(S)
+        size = dict:size(S#nodestate.drops)
     }.
 
 cumulative_volume(#nodestate{drops = Dropdict}) ->

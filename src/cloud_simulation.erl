@@ -7,17 +7,14 @@
 main([N]) ->
     {Iters, []} = string:to_integer(N),
     initial_config(),
-    Cloud = spawn_link(node, init, [self()]),
+    Cloud = spawn(node, init, [self()]),
+    monitor(process, Cloud),
     Cloud ! repopulate,
-    Cloud ! info,
-    receive
-        ok -> ok;
-        #nodeinfo{volume = Volume} when Volume < 4 * ?HALF_SPLIT_SIZE ->
-            io:format("Cumulative Water Volume: ~pmm³~n", [Volume]),
+    V = check_volume(Cloud, print),
+    if V < 4 * ?HALF_SPLIT_SIZE ->
             io:format("Not enough water!~n"),
             erlang:halt(1);
-        #nodeinfo{volume = Volume} ->
-            io:format("Cumulative Water Volume: ~pmm³~n", [Volume])
+        true -> ok
     end,
     run(Iters, Cloud),
     %fprof:apply(fun run/2, [Iters, Cloud]),
@@ -25,6 +22,18 @@ main([N]) ->
     %fprof:analyse(),
     init:stop(),
     ok.
+
+check_volume(Cloud) when is_pid(Cloud) -> check_volume(Cloud, print).
+check_volume(Cloud, Flag) when is_pid(Cloud) ->
+    Cloud ! info,
+    receive
+        #nodeinfo{volume = Volume} ->
+            if Flag =:= print ->
+                    io:format("Cumulative Water Volume: ~pmm³~n", [Volume]);
+                true -> ok
+            end
+    end,
+    Volume.
 
 initial_config() ->
     %error_logger:logfile({open, "log"}),
