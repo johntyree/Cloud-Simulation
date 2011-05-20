@@ -86,7 +86,8 @@ drop_loop(S = #nodestate{}) ->
             if is_pid(S#nodestate.deity) ->
                     S#nodestate.deity ! info(S);
                 true -> ok
-            end;
+            end,
+            drop_loop(S);
 
         reload ->
             ?MODULE:drop_loop(S);
