@@ -103,10 +103,16 @@ flush(N, print, Acc) ->
         X ->
             io:format("~p ", [X]),
             flush(N-1, print, [X|Acc])
+    after ?TIMEOUT ->
+            io:format("Still waiting for ~p messages.~n", [N]),
+            flush(N, print, Acc)
     end;
 flush(N, Flag, Acc) ->
     receive
         X -> flush(N-1, Flag, [X|Acc])
+    after ?TIMEOUT ->
+            io:format("Still waiting for ~p messages.~n", [N]),
+            flush(N, Flag, Acc)
     end.
 
 radius(Volume) when is_number(Volume) -> math:sqrt(0.75 * Volume / math:pi()).
