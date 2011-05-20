@@ -138,7 +138,6 @@ new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
 handle_collision(D, []) -> [D];
 handle_collision(D, OldDrops) when is_list(OldDrops) ->
     % * io:format("Handle collision between ~p and ~p ", [D, OldDrops]),
-    % * io:format("(~p and ~p)~n", [is_list(D), is_list(OldDrops)]),
     %% Phase 1, we just coalesce them and call it a day
     P1 = [lists:foldl(fun drop:coalesce/2, D, OldDrops)],
     %% Phase 2, if a drop is too big, it may split into two
