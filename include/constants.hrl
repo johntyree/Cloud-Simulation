@@ -115,8 +115,9 @@ flush(N, Flag, Acc) ->
             flush(N, Flag, Acc)
     end.
 
-radius(Volume) when is_number(Volume) -> math:sqrt(0.75 * Volume / math:pi()).
-volume(Radius) when is_number(Radius) -> 4/3 * math:pi() * Radius * Radius.
+radius(Volume) when is_number(Volume) -> math:pow(0.75 * Volume / math:pi(), 1/3).
+volume(Radius) when is_number(Radius) -> 4/3 * math:pi() * Radius * Radius *
+    Radius.
 
 percent_true(X) ->
     length([ true || true <- [ X() || _ <- lists:seq(1,1000)]]) / 1000.
