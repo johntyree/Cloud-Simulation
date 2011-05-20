@@ -9,19 +9,26 @@ main([N]) ->
     Cloud = spawn(node, init, [self()]),
     Cloud ! repopulate,
     run(Iters, Cloud),
+    %fprof:apply(fun run/2, [Iters, Cloud]),
+    %fprof:profile(),
+    %fprof:analyse(),
     init:stop(),
     ok.
 
 initial_config() ->
     %error_logger:logfile({open, "log"}),
-    error_logger:tty(false).
+    <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
+    random:seed(A, B, C),
+    error_logger:tty(false),
+    ok.
 
 run(0, Cloud) ->
     Cloud ! {die, self()},
     wait(Cloud);
 run(N, Cloud) when is_integer(N) ->
-    if N rem 5 =:= 0 ->
-            io:format("~n~p ", [N]);
+    if N rem 20 =:= 0 ->
+            io:format("~n~p ", [N]),
+            ok;
         true -> ok
     end,
     Cloud ! move,

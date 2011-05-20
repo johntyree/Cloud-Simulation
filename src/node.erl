@@ -6,8 +6,13 @@
 -include_lib("node.hrl").
 -include_lib("drop.hrl").
 
-%initial_config() ->
+initial_config() ->
+    {ok, F} = file:open("log", [write]),
+    group_leader(F, self()),
     %error_logger:logfile({open, "log_node"}).
+    <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
+    random:seed(A, B, C),
+    ok.
 
 init() -> init(#nodestate{}).
 init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
@@ -23,14 +28,14 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
         }).
 init(Parent) when is_pid(Parent) -> init(#nodestate{deity = Parent});
 init(S = #nodestate{}) ->
-    %initial_config(),
-    {ok, F} = file:open("log", [write]),
-    group_leader(F, self()),
+    initial_config(),
     drop_loop(S).
+    %fprof:apply(fun drop_loop/1, [S]).
 
 drop_loop(S = #nodestate{}) ->
     %error_logger:info_report(io_lib:format("~p", [dict:to_list(S#nodestate.drops)])),
-    io:format("~w~n", [dict:to_list(S#nodestate.drops)]),
+    %io:format("~w~n", [dict:to_list(S#nodestate.drops)]),
+    io:format("~w~n", [S#nodestate.drops]),
     receive
         move ->
             Drops = move_drops(S#nodestate.drops),
@@ -62,7 +67,7 @@ drop_loop(S = #nodestate{}) ->
 
         {die, Pid} ->
             %error_logger:info_report(io_lib:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)])),
-            io:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)]),
+            %io:format("Final drop list:~n~p", [dict:to_list(S#nodestate.drops)]),
             Pid ! {ok_im_dead, self()},
             ok;
 
