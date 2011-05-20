@@ -1,9 +1,9 @@
 -define(GRIDSIZE_X, 50).
 -define(GRIDSIZE_Y, 50).
 -define(GRIDSIZE_Z, 1).
--define(INITIAL_DENSITY, 0.4).
+-define(INITIAL_DENSITY, 0.8).
 -define(RELATIVE_HUMIDITY, ?INITIAL_DENSITY).
--define(HALF_SPLIT_SIZE, 1.5).
+-define(HALF_SPLIT_SIZE, 0.8).
 -define(SPLIT_STEEPNESS, 3.5).
 %% Sigmoid model f(x) = 1 - 1/(1 + (1 - splitsize + dropsize)^steepness
 -define(FINAL_DROP_COUNT, 150).
@@ -25,7 +25,6 @@ saturation_pressure(C) when C >= -50, C =< 102 ->
                 * (373.16/T - 1))
                 - 1)
         + math:log10(1013.246)).
-
 
 % Fast gaussian generator algorithm from (Leva 1992)
 % http://portal.acm.org/citation.cfm?id=138364
