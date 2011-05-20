@@ -42,12 +42,13 @@ initial_config() ->
     error_logger:tty(false),
     ok.
 
-run(0, Cloud) ->
+run(Iters, Cloud) when is_integer(Iters) -> run(0, Iters, Cloud).
+run(Iters, Iters, Cloud) ->
     Cloud ! {die, self()},
     wait(Cloud);
-run(N, Cloud) when is_integer(N) ->
-    if N rem 20 =:= 0 ->
-            io:format("~n~p ", [N]),
+run(N, Iters, Cloud) ->
+    if N rem 1 =:= 0 ->
+            io:format("~n~p ", [N+1]),
             ok;
         true -> ok
     end,
@@ -59,11 +60,11 @@ run(N, Cloud) when is_integer(N) ->
         X when is_integer(X) and (X > ?FINAL_DROP_COUNT) ->
             %error_logger:info_report(io_lib:format("~p", [X])),
             io:format("~p ", [X]),
-            run(N - 1, Cloud);
+            run(N + 1, Iters, Cloud);
         X ->
             %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
             io:format("~nGot ~p, Sending death message.~n", [X]),
-            run(0, Cloud)
+            run(Iters, Iters, Cloud)
     end.
 
 wait(Cloud) ->
