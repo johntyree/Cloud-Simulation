@@ -6,9 +6,8 @@
 -include_lib("drop.hrl").
 
 %% Make a new drop
-new() ->
-    Size = new_size(),
-    #dropstate{size = Size}.
+new() -> new(new_size()).
+new(Size) when is_number(Size), Size >= 0 -> #dropstate{size = Size}.
 
 coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
     NewSize = radius(volume(S1#dropstate.size) + volume(S2#dropstate.size)),
