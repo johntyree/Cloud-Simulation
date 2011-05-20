@@ -32,11 +32,6 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
     1 - (1 / (1 + math:pow(1 - ?HALF_SPLIT_SIZE + Size, ?SPLIT_STEEPNESS)))
     > random_uniform_nonboundary(0,1).
 
-move({P, D}) ->
-    NewPosition = migrate(P, random_direction()),
-    {NewPosition, D}.
-
-%coords(S = #dropstate{x = X, y = Y, z = Z}) -> {X, Y, Z}.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%                   %%
@@ -44,26 +39,6 @@ move({P, D}) ->
 %%                   %%
 %%%%%%%%%%%%%%%%%%%%%%%
 
-%% Change the actual position,
-%% This is basically just zipWith((+), T1, T2) where T's are three-tuples
-%% ret: {coords}
-migrate({X, Y, Z}, {DX, DY, DZ}) ->
-    NewX = X + DX,
-    NewY = Y + DY,
-    NewZ = Z + DZ,
-    {NewX, NewY, NewZ}.
-
-%% Chose a random x and y movement from -1,0,1
-random_direction() -> random_direction(1).
-random_direction(Step) ->
-    {random_int(-Step, Step), random_int(-Step, Step), 0}.
-    %% For 3D, add the Z dimension
-    %{random_int(-Step, Step), random_int(-Step, Step), random_int(-Step, Step)}.
-
-%%  Stochastic decision making
-%% when two drops are at the same site
-handle_collision(_Us, _Them) ->
-    ok.
 
 %% Size of a new drop
 %% http://ga.water.usgs.gov/edu/raindropsizes.html
@@ -76,14 +51,3 @@ new_size() ->
             X
     end.
 
-%% Retrieve the state of a drop
-get_state(Pid) ->
-    ?TIMEOUT = constants:timeout(),
-    Ref = make_ref(),
-    Pid ! {send_state, Ref, self()},
-    receive
-        {send_state, Ref, S} -> S
-    after ?TIMEOUT ->
-            error_logger:format("~p: No response from Drop ~p.", [self(), Pid]),
-            exit(timeout)
-    end.

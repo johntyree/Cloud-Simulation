@@ -180,20 +180,44 @@ add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
 %% Move all drops to their new locations.
 %% DropDict -> DropDict
 -spec move_drops(dict()) -> dict().
--spec move_drops([], any(), dict()) -> dict()
-    ; ([{integer(), integer(), integer()},...], dict(), dict()) -> dict().
-move_drops(Drops) ->
-    Coords = dict:fetch_keys(Drops),
-    move_drops(Coords, Drops, dict:new()).
-move_drops([], _, NewDrops) -> NewDrops;
-move_drops([C|Coords], OldDrops, NewDrops) ->
-    %% List of drops at coord C.
-    DropList = dict:fetch(C, OldDrops),
-    %% List of {NewCoord, Drop} to be added
-    MovedDropList = lists:map(fun(D) -> drop:move({C, D}) end, DropList),
+move_drops(Dropdict) ->
+    %Coords = dict:fetch_keys(Drops),
+    %move_drops(Coords, Drops, dict:new()).
+    MovedDropList = dict:fold(
+        fun(Coord, Ds, Acc0) ->
+                lists:append(lists:map(fun(D) -> {migrate(Coord), D} end,
+                        Ds), Acc0)
+        end,
+        [],
+        Dropdict),
     %% Cumulative dict of new drops
-    NewDropDict = add_drops(MovedDropList, NewDrops),
-    move_drops(Coords, OldDrops, NewDropDict).
+    lists:foldl(fun add_drop/2, dict:new(), MovedDropList).
+%move_drops([], _, NewDrops) -> NewDrops;
+%move_drops([C|Coords], OldDrops, NewDrops) ->
+    %%% List of drops at coord C.
+    %DropList = dict:fetch(C, OldDrops),
+    %%% List of {NewCoord, Drop} to be added
+    %MovedDropList = lists:map(fun(D) -> drop:move({C, D}) end, DropList),
+    %%% Cumulative dict of new drops
+    %NewDropDict = add_drops(MovedDropList, NewDrops),
+    %move_drops(Coords, OldDrops, NewDropDict).
+
+%% Change the actual position,
+%% This is basically just zipWith((+), T1, T2) where T's are three-tuples
+%% ret: {coords}
+migrate({X, Y, Z}) -> migrate({X, Y, Z}, random_direction()).
+migrate({X, Y, Z}, {DX, DY, DZ}) ->
+    NewX = X + DX,
+    NewY = Y + DY,
+    NewZ = Z + DZ,
+    {NewX, NewY, NewZ}.
+
+%% Chose a random x and y movement from -1,0,1
+random_direction() -> random_direction(1).
+random_direction(Step) ->
+    {random_int(-Step, Step), random_int(-Step, Step), 0}.
+    %% For 3D, add the Z dimension
+    %{random_int(-Step, Step), random_int(-Step, Step), random_int(-Step, Step)}.
 
 
 %% Filter out the drops that have left our domain.
