@@ -10,10 +10,11 @@ main([N]) ->
     Cloud = spawn(node, init, [self()]),
     monitor(process, Cloud),
     Cloud ! repopulate,
-    V = check_volume(Cloud, print),
+    V = check_volume(Cloud),
     if V < 4 * ?HALF_SPLIT_SIZE ->
             io:format("Not enough water!~n"),
-            erlang:halt(1);
+            %erlang:halt(1);
+            ok;
         true -> ok
     end,
     run(Iters, Cloud),
