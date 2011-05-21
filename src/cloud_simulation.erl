@@ -53,8 +53,20 @@ run(N, Iters, Cloud) ->
         true -> ok
     end,
     Cloud ! move,
+    receive
+        ok -> ok;
+        {route_drops, DropList} ->
+            io:format("~nGot drops to route.~n"),
+            Keepers = [{{X, Y, Z}, Drop} || {{X, Y, Z}, Drop} <- DropList, Y
+                < ?GRIDSIZE_Y ],
+            io:format("Removed from bottom.~n"),
+            Keepers2 = [node:periodicise_drop(#nodestate{}, {{X, 3,
+                            Z}, Drop}) || {{X, Y, Z}, Drop} <- Keepers, Y
+                < 0 ],
+            io:format("Periodicised.~n"),
+            [Cloud ! {new_drop, D} || D <- Keepers2]
+    end,
     Cloud ! {size, self()},
-    flush(1), %% The 'ok' message after moving the drops.
     receive %% the size
         %% Keep going until max iterations are reached or only one drop left
         X when is_integer(X) and (X > ?FINAL_DROP_COUNT) ->

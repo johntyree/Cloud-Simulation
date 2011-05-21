@@ -48,13 +48,18 @@ drop_loop(S = #nodestate{}) ->
                 true -> ok
             end,
             if is_pid(S#nodestate.deity) ->
-                    S#nodestate.deity ! ok;
+                    if Transfer =/= [] ->
+                            S#nodestate.deity ! {route_drops, Transfer},
+                            io:format("Sent drops to deity.~n");
+                        true -> S#nodestate.deity ! ok
+                    end;
                 true -> ok
             end,
             io:format("~w~n", [S#nodestate.drops]),
             drop_loop(S#nodestate{drops = Keep});
 
-        {newdrop, D} ->
+        {new_drop, D} ->
+            io:format("Got drop!~n"),
             Drops = add_drop(D, S#nodestate.drops),
             drop_loop(S#nodestate{drops = Drops});
 
@@ -213,27 +218,58 @@ migrate({X, Y, Z}, {DX, DY, DZ}) ->
     NewZ = Z + DZ,
     {NewX, NewY, NewZ}.
 
+%% Mathematica's FindFit to give model params for drag equation of a sphere.
+%% http://en.wikipedia.org/wiki/Terminal_velocity
+%% Density of rain = 1000 kg/m³
+%% Density of air  = 1.025 kg/m³ at 6000ft. 
+%% If you give it {Coord, Drop} it returns the same.
+%% Otherwise it just maps to migrate(Coord)
+%% {Coord} -> dropstate -> {{Coord}, dropstate}
+%% {Coord} -> {Coord}
+rain_mvmt(Coord, Drop = #dropstate{size = Size}) when Size > (?HALF_SPLIT_SIZE / 29) ->
+    io:format("Size: ~p~n", [Size]),
+    %% 0.05mm -> 7 cm/s (~8)
+    %% 0.1mm -> 70 cm/s
+    %% 1mm -> 550 cm/s (~518)
+    Tvelocity = (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE /
+                60), 0.5)) * 100,
+    %Tvelocity = math:pow(569.737* (-0.049 + Size), 0.702734)
+    {migrate(Coord, random_direction(
+                0 - ?WINDSPEED, 0, % X
+                -Tvelocity, -Tvelocity * 0.3, % Y
+                0, 0) % Z
+        ), Drop};
+%% Small drops go UP due to updrafts
+rain_mvmt(Coord, Drop = #dropstate{}) ->
+    {migrate(Coord, random_direction(-?WINDSPEED, 0, -1, 2, 0, 0)), Drop}.
+rain_mvmt(Coord) -> migrate(Coord).
+
 %% Chose a random x and y movement from -1,0,1
 random_direction() -> random_direction(1).
-random_direction(Step) ->
-    {random_int(-Step, Step), random_int(-Step, Step), 0}.
-    %% For 3D, add the Z dimension
-    %{random_int(-Step, Step), random_int(-Step, Step), random_int(-Step, Step)}.
+random_direction(Step) -> random_direction(-Step, Step, -Step, Step, -Step, Step).
+%% Xmin = Ymin = 0
+random_direction(Xmin, Xmax, Ymin, Ymax, Zmin, Zmax) ->
+    io:format("~p ~p ~p ~p ~p ~p~n", [Xmin, Xmax, Ymin, Ymax, Zmin, Zmax]),
+    %% This scaling is a disaster right now....
+    DX = scaled_random_int(Xmin, Xmax),
+    DY = scaled_random_int(Ymin, Ymax),
+    DZ = scaled_random_int(Zmin, Zmax),
+    {DX, DY, DZ}.
 
 
 %% Filter out the drops that have left our domain.
 %% nodestate -> DropDict -> {Local DropDict, Nonlocal DropDict}
 %% If the parent is undefined, boundaries become periodic in all directions for now.
-filter_drops(S = #nodestate{parent = P}, Drops) when P =:= undefined ->
-    % * io:format("Parent Undefined~n"),
-    {Local, NonLocal} = filter_drops(S, dict:to_list(Drops), [], []),
-    % * io:format("Filtered Drops:~n"),
-    % * io:format("~p~n", [{Local, NonLocal}]),
-    % * io:format("Periodicisin' ~p~n", [{Local, NonLocal}]),
-    Localized = periodicise_drops(S, NonLocal),
-    % * io:format("Periodicised:~n~p~n", [Localized]),
-    % * io:format("Adding to keepers~n~p~n~p~n", [dict:to_list(Localized), Local]),
-    {add_drops(dict:to_list(Localized), Local), []};
+%filter_drops(S = #nodestate{parent = P}, Drops) when P =:= undefined ->
+    %% * io:format("Parent Undefined~n"),
+    %{Local, NonLocal} = filter_drops(S, dict:to_list(Drops), [], []),
+    %% * io:format("Filtered Drops:~n"),
+    %% * io:format("~p~n", [{Local, NonLocal}]),
+    %% * io:format("Periodicisin' ~p~n", [{Local, NonLocal}]),
+    %Localized = periodicise_drops(S, NonLocal),
+    %% * io:format("Periodicised:~n~p~n", [Localized]),
+    %% * io:format("Adding to keepers~n~p~n~p~n", [dict:to_list(Localized), Local]),
+    %{add_drops(dict:to_list(Localized), Local), []};
 filter_drops(S = #nodestate{}, Drops) ->
     % * io:format("Got drop dict, making list~n"),
     filter_drops(S, dict:to_list(Drops), [], []).
