@@ -3,11 +3,13 @@
 -define(GRIDSIZE_Z, 1).
 -define(INITIAL_DENSITY, 1).
 -define(RELATIVE_HUMIDITY, ?INITIAL_DENSITY).
--define(HALF_SPLIT_SIZE, 0.2).
+-define(SCALE, 0.01).
+-define(HALF_SPLIT_SIZE, 1.5).
 -define(SPLIT_STEEPNESS, 3.5).
 %% Sigmoid model f(x) = 1 - 1/(1 + (1 - splitsize + dropsize)^steepness
 -define(FINAL_DROP_COUNT, 1).
 -define(TIMEOUT, 500).
+-define(WINDSPEED, 5).
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
     T = 273.16 + C,
@@ -64,9 +66,30 @@ random_uniform_nonboundary(L, U) ->
 random_int(U) -> random_int(0, U).
 %% Can't have negatives
 random_int(L, U) when is_integer(L), is_integer(U), L =< U ->
-    %crypto:rand_uniform(0, U-L+1) + L.
-    random:uniform(U-L+1) + (L-1).
+    crypto:rand_uniform(0, U-L+1) + L;
+    %random:uniform(U-L+1) + (L-1).
+random_int(L, U) when is_integer(L), is_integer(U), L > U ->
+    random_int(U, L).
 
+scaled_random_int(U) -> scaled_random_int(0, U).
+scaled_random_int(RawL, RawU) when RawL =< RawU ->
+    L = RawL * ?SCALE,
+    U = RawU * ?SCALE,
+    FL = floor(L),
+    CU = ceiling(U),
+    BumpUp = abs(L - FL),
+    BumpDown = abs(U - CU),
+    Fraction = random:uniform(),
+    %io:format("FL  ~p    CU  ~p    BumpDown  ~p    BumpUp  ~p    Fraction ~p~n", [FL, CU, BumpDown, BumpUp, Fraction]),
+    case random_int(FL, CU) of
+        Base when Base =:= FL, BumpUp > Fraction ->
+            %io:format("BUMP UP~n"),
+            Base + 1;
+        Base when Base =:= CU, BumpDown > Fraction ->
+            %io:format("BUMP DOWN~n"),
+            Base - 1;
+        Base -> Base
+    end.
 
 bisect(Int) ->
     case Int rem 2 of
@@ -121,3 +144,26 @@ volume(Radius) when is_number(Radius) -> 4/3 * math:pi() * Radius * Radius *
 
 percent_true(X) ->
     length([ true || true <- [ X() || _ <- lists:seq(1,1000)]]) / 1000.
+
+avg_value(X) -> lists:sum([ X() || _ <- lists:seq(1,1000)]) / 1000.
+
+floor(X) ->
+    T = erlang:trunc(X),
+    case (X - T) of
+        Neg when Neg < 0 -> T - 1;
+        Pos when Pos > 0 -> T;
+        _ -> T
+    end.
+
+ceiling(X) ->
+    T = erlang:trunc(X),
+    case (X - T) of
+        Neg when Neg < 0 -> T;
+        Pos when Pos > 0 -> T + 1;
+        _ -> T
+    end.
+
+round_out(X) when X < 0 -> trunc(X) - 1;
+round_out(X) when X > 0 -> trunc(X) + 1;
+round_out(0) -> 0.
+

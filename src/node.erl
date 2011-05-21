@@ -186,7 +186,7 @@ move_drops(Dropdict) ->
     %move_drops(Coords, Drops, dict:new()).
     MovedDropList = dict:fold(
         fun(Coord, Ds, Acc0) ->
-                lists:append(lists:map(fun(D) -> {migrate(Coord), D} end,
+                lists:append(lists:map(fun(D) -> rain_mvmt(Coord, D) end,
                         Ds), Acc0)
         end,
         [],
