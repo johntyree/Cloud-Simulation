@@ -37,7 +37,10 @@ void draw()
     Drop[] drops = parseLine(pieces);
     background(255);
     for (int i=0; i < drops.length; i++) {
-      ellipse((sx / gridsize_x) * drops[i].x, (sy / gridsize_y) * drops[i].y, 10*drops[i].r, 10*drops[i].r);
+      ellipse((sx / gridsize_x) * drops[i].x,
+              // y = 0 is at the top, we must flip our coordinates
+              sy - (sy / gridsize_y) * drops[i].y,
+              2*drops[i].r, 2*drops[i].r);
     }
   }
 }
