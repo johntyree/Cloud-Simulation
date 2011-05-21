@@ -47,7 +47,7 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
 %% there without ENORMOUS domains
 new_size() ->
     %X = gaussian(0.025, 0.006),
-    X = gaussian(0.50, 0.006),
+    X = gaussian(0.25, 0.01),
     if X =< 0 ->
             new_size();
         true ->
