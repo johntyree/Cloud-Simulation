@@ -53,6 +53,7 @@ gaussian(Mu, Sigma) ->
             end
     end.
 
+random_uniform_nonboundary(U, U) -> U;
 random_uniform_nonboundary(L, U) ->
     X = (U - L) * random:uniform() + L,
     %crypto:random_bytes
