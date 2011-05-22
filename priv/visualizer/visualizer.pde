@@ -13,7 +13,7 @@ void setup()
   size(600, 600, P2D);
   gridsize_x = 200;
   gridsize_y = 200;
-  frameRate(8);
+  frameRate(5);
   sx = width;
   sy = height;
   reader = createReader("run");
@@ -35,13 +35,15 @@ void draw()
   } else {
     String[][] pieces = matchAll(line, "(\\d+) (\\d+) (\\d+\\.\\d+)");
     Drop[] drops = parseLine(pieces);
+    println(drops.length);
     background(255);
     for (int i=0; i < drops.length; i++) {
       ellipse((sx / gridsize_x) * drops[i].x,
               // y = 0 is at the top, we must flip our coordinates
               sy - (sy / gridsize_y) * drops[i].y,
-              2*drops[i].r, 2*drops[i].r);
+              20*drops[i].r, 20*drops[i].r);
     }
+    //noLoop();
   }
 }
 
@@ -54,17 +56,16 @@ Drop[] parseLine(String[][] pieces) {
 }
 
 class Drop{
-  float x, y, r, m;
+  float x, y, r;
 
   // default constructor
   Drop() {
   }
 
   Drop(float x, float y, float r) {
-    // println("New drop: " + x + ", " + y + ", " + r);
+      //println("New drop: " + x + ", " + y + ", " + r);
     this.x = x;
     this.y = y;
     this.r = r;
-    m = r*.1;
   }
 }
