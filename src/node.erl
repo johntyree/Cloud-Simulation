@@ -246,11 +246,18 @@ rain_mvmt(Coord, Drop = #dropstate{size = Size}) when Size > (?HALF_SPLIT_SIZE /
     {migrate(Coord, random_direction(
                 0 - ?WINDSPEED, 0, % X
                 -Tvelocity, -Tvelocity * 0.3, % Y
-                0, 0) % Z
+                0, 0 % Z
+            )
         ), Drop};
 %% Small drops go UP due to updrafts
+%% Lets call it ~0.003 m/s
 rain_mvmt(Coord, Drop = #dropstate{}) ->
-    {migrate(Coord, random_direction(-?WINDSPEED, 0, -1, 2, 0, 0)), Drop}.
+    {migrate(Coord, random_direction(
+                0 - ?WINDSPEED,
+                0 - ?WINDSPEED * 0.3, % X
+                -0.5, 6, % Y
+                0, 0) % Z
+        ), Drop}.
 rain_mvmt(Coord) -> migrate(Coord).
 
 %% Chose a random x and y movement from -1,0,1
@@ -275,7 +282,7 @@ random_direction(Xmin, Xmax, Ymin, Ymax, Zmin, Zmax) ->
     %% * io:format("Filtered Drops:~n"),
     %% * io:format("~p~n", [{Local, NonLocal}]),
     %% * io:format("Periodicisin' ~p~n", [{Local, NonLocal}]),
-    %Localized = periodicise_drops(S, NonLocal),
+    %Localized = handle_boundary_drops(S, NonLocal),
     %% * io:format("Periodicised:~n~p~n", [Localized]),
     %% * io:format("Adding to keepers~n~p~n~p~n", [dict:to_list(Localized), Local]),
     %{add_drops(dict:to_list(Localized), Local), []};
