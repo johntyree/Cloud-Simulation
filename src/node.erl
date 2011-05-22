@@ -252,26 +252,20 @@ migrate({X, Y, Z}, {DX, DY, DZ}) ->
 %% Otherwise it just maps to migrate(Coord)
 %% {Coord} -> dropstate -> {{Coord}, dropstate}
 %% {Coord} -> {Coord}
-rain_mvmt(Coord, Drop = #dropstate{size = Size}) when Size > (?HALF_SPLIT_SIZE / 29) ->
-    %io:format("Size: ~p~n", [Size]),
-    %% 0.05mm -> 0.07 m/s
-    %% 0.1mm -> 0.7 m/s
-    %% 1mm -> 5.5 m/s
+%% Small drops go UP due to updrafts
+rain_mvmt(Coord, Drop = #dropstate{size = Size}) ->
+    %% MILLIMETERS PER SECOND, FOLKS
     Tvelocity = drop:terminal_velocity(Size),
+    %if Tvelocity > 0 ->
+            %io:format(standard_error, "Size: ~p Velocity: ~p~n", [Size,
+                    %Tvelocity]);
+        %true -> ok
+    %end,
     {migrate(Coord, random_direction(
                 0 - ?WINDSPEED, 0, % X
-                -Tvelocity, -Tvelocity * 0.3, % Y
+                -Tvelocity + ?UPDRAFT, -Tvelocity * 0.3 + ?UPDRAFT, % Y
                 0, 0 % Z
             )
-        ), Drop};
-%% Small drops go UP due to updrafts
-%% Lets call it ~0.003 m/s
-rain_mvmt(Coord, Drop = #dropstate{}) ->
-    {migrate(Coord, random_direction(
-                0 - ?WINDSPEED,
-                0 - ?WINDSPEED * 0.3, % X
-                -0.5, 6, % Y
-                0, 0) % Z
         ), Drop}.
 rain_mvmt(Coord) -> migrate(Coord).
 
