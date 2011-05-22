@@ -56,8 +56,9 @@ drop_loop(S = #nodestate{}) ->
                     end;
                 true -> ok
             end,
-            io:format("~w~n", [S#nodestate.drops]),
-            drop_loop(S#nodestate{drops = Keep});
+            NewState = spawn_new_drops(S#nodestate{drops = Keep}),
+            io:format("~w~n", [NewState#nodestate.drops]),
+            drop_loop(NewState);
 
         {new_drop, D} ->
             %io:format("Got drop!~n"),
@@ -106,32 +107,45 @@ drop_loop(S = #nodestate{}) ->
             drop_loop(S)
     end.
 
-%% Return nodestate with ~ AREA * INITIAL_DENSITY drops
+%% Return nodestate with ~ AREA * RELATIVE_HUMIDITY drops
 %% nodestate -> nodestate
-populate_domain(S = #nodestate{}) -> populate_domain(S, ?INITIAL_DENSITY).
+populate_domain(S = #nodestate{}) -> populate_domain(S, ?RELATIVE_HUMIDITY).
 populate_domain(S = #nodestate{}, Density) ->
-    XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
-    YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
-    ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
-    %l All permutations means all grid points in the domain in this case.
-    %% Should create AREA * INITIAL_DENSITY drops on average
-    DropList = [{{X,Y,Z}, [drop:new()]} || X <- XRange, Y <- YRange, Z <- ZRange,
-        Density > random_uniform_nonboundary(0, 1)],
-    S#nodestate{drops = add_drops(DropList, dict:new())}.
+    spawn_new_drops(S#nodestate{drops = dict:new()}, Density).
 
 info(S = #nodestate{}) ->
     #nodeinfo{
-        volume = cumulative_volume(S),
+        volume = water_volume(S),
         size = dict:size(S#nodestate.drops)
     }.
 
-cumulative_volume(#nodestate{drops = Dropdict}) ->
+water_volume(#nodestate{drops = Dropdict}) ->
     %Coords = dict:fetch_keys(Dropdict),
     Drop = dict:fold(fun(_, Ds, D) -> lists:foldl(fun drop:coalesce/2, D,
                     Ds) end, drop:new(0), Dropdict),
     Drop#dropstate.size.
 
-%% Return nodestate with one drop added, possibly on top of another one
+spatial_volume(S = #nodestate{}) ->
+    (S#nodestate.x2 - S#nodestate.x1 + 1) *
+    (S#nodestate.y2 - S#nodestate.y1 + 1) *
+    (S#nodestate.z2 - S#nodestate.z1 + 1).
+
+%% Return nodestate with area * relative_humidity drops added
+%% nodestate -> nodestate
+spawn_new_drops(S = #nodestate{}) ->
+    spawn_new_drops(S, ?RELATIVE_HUMIDITY).
+%% nodestate -> Density -> nodestate
+spawn_new_drops(S = #nodestate{}, Density) ->
+    XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
+    YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
+    ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
+    % All permutations means all grid points in the domain in this case.
+    %% Should create AREA * RELATIVE_HUMIDITY drops on average
+    DropList = [{{X,Y,Z}, [drop:new()]} || X <- XRange, Y <- YRange, Z <- ZRange,
+        Density > random_uniform_nonboundary(0, 1)],
+    %io:format("Adding ~p new drops~n",[length(DropList)]),
+    S#nodestate{drops = add_drops(DropList, S#nodestate.drops)}.
+
 create_drop(S = #nodestate{}) ->
     NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
     S#nodestate{drops = NewDrops}.
