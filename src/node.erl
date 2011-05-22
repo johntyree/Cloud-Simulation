@@ -289,29 +289,39 @@ filter_drops(S, [D|Drops], Local, NonLocal) ->
     end.
 
 
-%% nodestate -> DropDict -> DropDict
+%% nodestate -> DropDict -> DropList
 %% TODO: Could be made faster by filtering the dict for local coords first.
-periodicise_drops(S, NewDrops) ->
-    Coords = dict:fetch_keys(NewDrops),
-    periodicise_drops(S, Coords, NewDrops, dict:new()).
-periodicise_drops(_S, [], _, NewDrops) -> NewDrops;
-periodicise_drops(S, [C|Coords], OldDrops, NewDrops) ->
+handle_boundary_drops(S, OldDrops) ->
+    Coords = dict:fetch_keys(OldDrops),
+    handle_boundary_drops(S, Coords, OldDrops, []).
+handle_boundary_drops(_S, [], _, NewDropAcc) -> lists:append(NewDropAcc);
+handle_boundary_drops(S, [C|Coords], OldDrops, NewDropAcc) ->
     %% List of drops at coord C.
     DropList = dict:fetch(C, OldDrops),
     % * io:format("List of drops at coord ~p:~n~p~n", [C, DropList]),
     %% List of {NewCoord, Drop} to be added
-    MovedDropList = lists:map(fun(D) -> periodicise_drop(S, {C, D}) end, DropList),
+    MovedDropList = lists:foldl(fun(D, Acc) ->
+                case handle_boundary_drop(S, {C, D}) of
+                    undefined -> Acc;
+                    X -> [X|Acc]
+                end
+        end, [], DropList),
     % * io:format("List of {NewCoord, Drop} to be added:~n~p~n", [MovedDropList]),
-    %% Cumulative dict of new drops
-    NewDropDict = add_drops(MovedDropList, NewDrops),
-    periodicise_drops(S, Coords, OldDrops, NewDropDict).
-periodicise_drop(
+    %% Cumulative List of new drops
+    %NewDropDict = add_drops(MovedDropList, NewDrops),
+    handle_boundary_drops(S, Coords, OldDrops, [MovedDropList|NewDropAcc]).
+handle_boundary_drop(
     #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
     {{X, Y, Z}, Drop}) ->
-    NewX = make_periodic(X, X1, X2),
-    NewY = make_periodic(Y, Y1, Y2),
-    NewZ = make_periodic(Z, Z1, Z2),
-    {{NewX, NewY, NewZ}, Drop}.
+    NewX = positive_periodic(X, X1, X2),
+    NewY = positive_periodic(Y, Y1, Y2),
+    NewZ = positive_periodic(Z, Z1, Z2),
+    case {{NewX, NewY, NewZ}, Drop} of
+        {{undefined, _, _}, _} -> undefined;
+        {{_, undefined, _}, _} -> undefined;
+        {{_, _, undefined}, _} -> undefined;
+        _ -> {{NewX, NewY, NewZ}, Drop}
+    end.
 
 
 %% Return true if the drop D is in domain of S, else false.

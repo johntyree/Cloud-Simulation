@@ -53,20 +53,7 @@ run(N, Iters, Cloud) ->
             ok;
         true -> ok
     end,
-    Cloud ! move,
-    receive
-        ok -> ok;
-        {route_drops, DropList} ->
-            io:format("~nGot drops to route.~n"),
-            Keepers = [{{X, Y, Z}, Drop} || {{X, Y, Z}, Drop} <- DropList, Y
-                < ?GRIDSIZE_Y ],
-            io:format("Removed from bottom.~n"),
-            Keepers2 = [node:periodicise_drop(#nodestate{}, {{X, 3,
-                            Z}, Drop}) || {{X, Y, Z}, Drop} <- Keepers, Y
-                < 0 ],
-            io:format("Periodicised.~n"),
-            [Cloud ! {new_drop, D} || D <- Keepers2]
-    end,
+    move_drops(Cloud),
     Cloud ! {size, self()},
     receive %% the size
         %% Keep going until max iterations are reached or only one drop left
@@ -79,6 +66,21 @@ run(N, Iters, Cloud) ->
             io:format(standard_error, "~nGot ~p, Sending death message.~n", [X]),
             run(Iters, Iters, Cloud)
     end.
+
+move_drops(Cloud) ->
+    Cloud ! move,
+    receive
+        ok -> ok;
+        {route_drops, DropDict} ->
+            io:format(standard_error, "~nGot drops to route.~n", []),
+            %io:format(standard_error, "~p~n", [DropDict]),
+            Keepers = node:handle_boundary_drops(#nodestate{}, DropDict),
+            io:format(standard_error, "Handled boundary cases. (~p out of about ~p)~n",
+                [length(Keepers), dict:size(DropDict)]),
+            [Cloud ! {new_drop, D} || D <- Keepers],
+            io:format(standard_error, "Resent drops to Cloud.~n", [])
+    end,
+    ok.
 
 wait(Cloud) ->
     receive

@@ -108,6 +108,11 @@ make_periodic(Val, Min, Max) when Val < Min ->
 make_periodic(Val, Min, Max) when Val > Max ->
     make_periodic(Val - (Max - Min + 1), Min, Max).
 
+positive_periodic(Val, _Min, Max) when Val > Max ->
+    make_periodic(Val, round(Max * 0.75), Max);
+positive_periodic(Val, Min, _Max) when Val < Min -> undefined;
+positive_periodic(Val, _Min, _Max) -> Val.
+
 print_dict(D) ->
     dict:map(fun(K, V) -> io:format("~p: ~p~n", [K, V]) end, D),
     ok.
