@@ -36,10 +36,17 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
 %% http://en.wikipedia.org/wiki/Terminal_velocity
 %% Density of rain = 1000 kg/m³
 %% Density of air  = 1.025 kg/m³ at 6000ft.
+%% < 0.018mm > 0 mm/s (all movement due to wind)
+%% 0.05mm -> 70 mm/s
+%% 0.1mm -> 700 mm/s
+%% 1mm -> 5500 mm/s
+%% MILLIMETERS PER SECOND, FOLKS
 terminal_velocity(#dropstate{size = Size}) -> terminal_velocity(Size);
-terminal_velocity(Size) when Size > (?HALF_SPLIT_SIZE / 29) ->
-    (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE /
-                60), 0.5)) * 100.
+terminal_velocity(Size) when Size > (?HALF_SPLIT_SIZE / 27) ->
+    (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE / 60), 0.5)) * 1000;
+terminal_velocity(Size) when Size > 0.04 -> 1298.16 * math:pow((-0.0258 + 10
+            * Size), 8) * 1000;
+terminal_velocity(_Size) -> 0.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%                   %%

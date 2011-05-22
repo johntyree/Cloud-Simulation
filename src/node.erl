@@ -130,12 +130,20 @@ spatial_volume(S = #nodestate{}) ->
     (S#nodestate.y2 - S#nodestate.y1 + 1) *
     (S#nodestate.z2 - S#nodestate.z1 + 1).
 
-%% Return nodestate with area * relative_humidity drops added
-%% nodestate -> nodestate
+%% This version is slower...
 spawn_new_drops(S = #nodestate{}) ->
-    spawn_new_drops(S, ?RELATIVE_HUMIDITY).
+    spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
 %% nodestate -> Density -> nodestate
 spawn_new_drops(S = #nodestate{}, Density) ->
+    DropList = lists:map(fun(_) -> {new_position(S), drop:new()} end, lists:seq(1, round(Density *
+                spatial_volume(S)))),
+    S#nodestate{drops = add_drops(DropList, S#nodestate.drops)}.
+
+%% Return nodestate with area * relative_humidity drops added
+%% nodestate -> nodestate
+xspawn_new_drops(S = #nodestate{}) ->
+    spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
+xspawn_new_drops(S = #nodestate{}, Density) ->
     XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
     YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
     ZRange = lists:seq(S#nodestate.z1, S#nodestate.z2),
@@ -149,9 +157,16 @@ spawn_new_drops(S = #nodestate{}, Density) ->
 create_drop(S = #nodestate{}) ->
     NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
     S#nodestate{drops = NewDrops}.
-new_position(#nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
+new_position(S = #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
         Z2}) ->
-    {random_int(X1, X2), random_int(Y1, Y2), random_int(Z1, Z2)}.
+    R = random_int(spatial_volume(S)-1),
+    XRange = X2 - X1 + 1,
+    YRange = Y2 - Y1 + 1,
+    ZRange = Z2 - Z1 + 1,
+    X = (R rem XRange) + X1,
+    Y = (trunc(R / XRange) rem YRange) + Y1,
+    Z = (trunc(R / (XRange * YRange)) rem ZRange) + Z1,
+    {X, Y, Z}.
 
 %% When two drops meet, we do something.
 %% dropstate -> [dropstate] -> [dropstate]

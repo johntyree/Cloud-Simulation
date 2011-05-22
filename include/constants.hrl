@@ -1,15 +1,15 @@
--define(GRIDSIZE_X, 50).
--define(GRIDSIZE_Y, 50).
+-define(GRIDSIZE_X, 200).
+-define(GRIDSIZE_Y, 200).
 -define(GRIDSIZE_Z, 1).
--define(INITIAL_DENSITY, 1).
--define(RELATIVE_HUMIDITY, ?INITIAL_DENSITY).
--define(SCALE, 0.01).
+-define(RELATIVE_HUMIDITY, 0.4).
+-define(SCALE, 0.001).
 -define(HALF_SPLIT_SIZE, 1.5).
 -define(SPLIT_STEEPNESS, 3.5).
 %% Sigmoid model f(x) = 1 - 1/(1 + (1 - splitsize + dropsize)^steepness
 -define(FINAL_DROP_COUNT, 1).
 -define(TIMEOUT, 500).
--define(WINDSPEED, 5).
+-define(WINDSPEED, 5000). % mm/s
+-define(UPDRAFT, 500). % mm/s
 
 saturation_pressure(C) when C >= -50, C =< 102 ->
     T = 273.16 + C,
