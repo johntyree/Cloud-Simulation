@@ -32,6 +32,14 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
     1 - (1 / (1 + math:pow(1 - ?HALF_SPLIT_SIZE + Size, ?SPLIT_STEEPNESS)))
     > random_uniform_nonboundary(0,1).
 
+%% Mathematica's FindFit to give model params for drag equation of a sphere.
+%% http://en.wikipedia.org/wiki/Terminal_velocity
+%% Density of rain = 1000 kg/m³
+%% Density of air  = 1.025 kg/m³ at 6000ft.
+terminal_velocity(#dropstate{size = Size}) -> terminal_velocity(Size);
+terminal_velocity(Size) when Size > (?HALF_SPLIT_SIZE / 29) ->
+    (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE /
+                60), 0.5)) * 100.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%                   %%

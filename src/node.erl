@@ -219,22 +219,16 @@ migrate({X, Y, Z}, {DX, DY, DZ}) ->
     NewZ = Z + DZ,
     {NewX, NewY, NewZ}.
 
-%% Mathematica's FindFit to give model params for drag equation of a sphere.
-%% http://en.wikipedia.org/wiki/Terminal_velocity
-%% Density of rain = 1000 kg/m³
-%% Density of air  = 1.025 kg/m³ at 6000ft. 
 %% If you give it {Coord, Drop} it returns the same.
 %% Otherwise it just maps to migrate(Coord)
 %% {Coord} -> dropstate -> {{Coord}, dropstate}
 %% {Coord} -> {Coord}
 rain_mvmt(Coord, Drop = #dropstate{size = Size}) when Size > (?HALF_SPLIT_SIZE / 29) ->
-    io:format("Size: ~p~n", [Size]),
-    %% 0.05mm -> 7 cm/s (~8)
-    %% 0.1mm -> 70 cm/s
-    %% 1mm -> 550 cm/s (~518)
-    Tvelocity = (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE /
-                60), 0.5)) * 100,
-    %Tvelocity = math:pow(569.737* (-0.049 + Size), 0.702734)
+    %io:format("Size: ~p~n", [Size]),
+    %% 0.05mm -> 0.07 m/s
+    %% 0.1mm -> 0.7 m/s
+    %% 1mm -> 5.5 m/s
+    Tvelocity = drop:terminal_velocity(Size),
     {migrate(Coord, random_direction(
                 0 - ?WINDSPEED, 0, % X
                 -Tvelocity, -Tvelocity * 0.3, % Y
