@@ -7,8 +7,8 @@
 -include_lib("drop.hrl").
 
 initial_config() ->
-    {ok, F} = file:open("log", [write]),
-    group_leader(F, self()),
+    %{ok, F} = file:open("log", [write]),
+    %group_leader(F, self()),
     %error_logger:logfile({open, "log_node"}).
     <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
     random:seed(A, B, C),
@@ -36,9 +36,9 @@ drop_loop(S = #nodestate{}) ->
     receive
         move ->
             Drops = move_drops(S#nodestate.drops),
-            io:format("Moved Drops.~n"),
+            %io:format("Moved Drops.~n"),
             {Keep, Transfer} = filter_drops(S, Drops),
-            io:format("Filtered Drops.~n"),
+            %io:format("Filtered Drops.~n"),
             if is_pid(S#nodestate.parent) ->
                     if Transfer =/= [] ->
                             S#nodestate.parent ! {route_drops, Transfer};
@@ -50,7 +50,8 @@ drop_loop(S = #nodestate{}) ->
             if is_pid(S#nodestate.deity) ->
                     if Transfer =/= [] ->
                             S#nodestate.deity ! {route_drops, Transfer},
-                            io:format("Sent drops to deity.~n");
+                            %io:format("Sent drops to deity.~n"),
+                            ok;
                         true -> S#nodestate.deity ! ok
                     end;
                 true -> ok
@@ -59,7 +60,7 @@ drop_loop(S = #nodestate{}) ->
             drop_loop(S#nodestate{drops = Keep});
 
         {new_drop, D} ->
-            io:format("Got drop!~n"),
+            %io:format("Got drop!~n"),
             Drops = add_drop(D, S#nodestate.drops),
             drop_loop(S#nodestate{drops = Drops});
 
@@ -249,7 +250,7 @@ random_direction() -> random_direction(1).
 random_direction(Step) -> random_direction(-Step, Step, -Step, Step, -Step, Step).
 %% Xmin = Ymin = 0
 random_direction(Xmin, Xmax, Ymin, Ymax, Zmin, Zmax) ->
-    io:format("~p ~p ~p ~p ~p ~p~n", [Xmin, Xmax, Ymin, Ymax, Zmin, Zmax]),
+    %io:format("~p ~p ~p ~p ~p ~p~n", [Xmin, Xmax, Ymin, Ymax, Zmin, Zmax]),
     %% This scaling is a disaster right now....
     DX = scaled_random_int(Xmin, Xmax),
     DY = scaled_random_int(Ymin, Ymax),
