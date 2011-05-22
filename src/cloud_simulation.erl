@@ -49,7 +49,7 @@ run(Iters, Iters, Cloud) ->
     wait(Cloud);
 run(N, Iters, Cloud) ->
     if N rem 1 =:= 0 ->
-            io:format(standard_error, "~nStep ~p ", [N+1]),
+            io:format(standard_error, "~p, ", [N+1]),
             ok;
         true -> ok
     end,
@@ -59,7 +59,7 @@ run(N, Iters, Cloud) ->
         %% Keep going until max iterations are reached or only one drop left
         X when is_integer(X) and (X > ?FINAL_DROP_COUNT) ->
             %error_logger:info_report(io_lib:format("~p", [X])),
-            io:format(standard_error, "~p drops in the cloud~n", [X]),
+            %io:format(standard_error, "~p drops~n", [X]),
             run(N + 1, Iters, Cloud);
         X ->
             %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
@@ -72,13 +72,13 @@ move_drops(Cloud) ->
     receive
         ok -> ok;
         {route_drops, DropDict} ->
-            io:format(standard_error, "~nGot drops to route.~n", []),
+            %io:format(standard_error, "~nGot drops to route.~n", []),
             %io:format(standard_error, "~p~n", [DropDict]),
             Keepers = node:handle_boundary_drops(#nodestate{}, DropDict),
-            io:format(standard_error, "Handled boundary cases. (~p out of about ~p)~n",
-                [length(Keepers), dict:size(DropDict)]),
-            [Cloud ! {new_drop, D} || D <- Keepers],
-            io:format(standard_error, "Resent drops to Cloud.~n", [])
+            %io:format(standard_error, "Handled boundary cases. (~p out of about ~p)~n",
+                %[length(Keepers), dict:size(DropDict)]),
+            [Cloud ! {new_drop, D} || D <- Keepers]
+            %io:format(standard_error, "Resent drops to Cloud.~n", [])
     end,
     ok.
 
