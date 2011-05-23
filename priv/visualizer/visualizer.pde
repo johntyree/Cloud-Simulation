@@ -6,23 +6,31 @@ int sx, sy;
 int gridsize_x, gridsize_y;
 float mingraph, maxgraph, ellipsecutoff;
 Drop[] drops;
+float globalmaxdrop;
 BufferedReader reader;
 float dropscale;
 String line;
 
 void setup()
 {
-  sx = 900;
-  sy = 200;
-  gridsize_x = 450;
-  gridsize_y = 100;
+  sx = 200;
+  sy = 800;
+  globalmaxdrop = 0;
+  gridsize_x = 50;
+  gridsize_y = 200;
   mingraph = 0.01;
   maxgraph = 100;
   ellipsecutoff = 0.05;
   dropscale = 2 * 1/mingraph;
   dropscale = 28;
-  frameRate(25);
-  reader = createReader("run");
+  frameRate(15);
+  reader = createReader("run_0.001_5000_2000_1_0.42_50_200");
+  //reader = createReader("run_0.001_1000_2000_0.1_0.54_50_200");
+  //reader = createReader("run_0.001_1000_2000_0.5_0.9_50_200");
+  //reader = createReader("run_0.001_1000_2000_1_1.2_50_200");
+  //reader = createReader("run_0.001_500_2000_1_1.5_50_200");
+  //reader = createReader("run_0.001_0_5000_1_2_50_200");
+
   size(sx, sy, P2D);
   fill(#8874FF);
 }
@@ -72,12 +80,15 @@ void draw()
       }
       if (drops[i].r > maxdrop) { 
         maxdrop = drops[i].r;
+        if (maxdrop > globalmaxdrop) {
+          globalmaxdrop = maxdrop;
+        }
       }
       if (drops[i].r < mindrop) { 
         mindrop = drops[i].r;
       }
     }
-    println(drops.length + " - Max: " + maxdrop + "Min: " + mindrop);
+    println(drops.length + "GMax:" + globalmaxdrop+ " Max:" + maxdrop + " Min:" + mindrop);
     //noLoop();
   }
 }
