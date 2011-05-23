@@ -9,14 +9,8 @@ main([N]) ->
     initial_config(),
     Cloud = spawn(node, init, [self()]),
     monitor(process, Cloud),
-    Cloud ! repopulate,
-    V = check_volume(Cloud),
-    if V < 4 * ?HALF_SPLIT_SIZE ->
-            io:format(standard_error, "Not enough water!~n", []),
-            %erlang:halt(1);
-            ok;
-        true -> ok
-    end,
+    Cloud ! {repopulate, 1},
+    node_info(Cloud),
     run(Iters, Cloud),
     %fprof:apply(fun run/2, [Iters, Cloud]),
     %fprof:profile(),
@@ -24,13 +18,14 @@ main([N]) ->
     init:stop(),
     ok.
 
-check_volume(Cloud) when is_pid(Cloud) -> check_volume(Cloud, print).
-check_volume(Cloud, Flag) when is_pid(Cloud) ->
+node_info(Cloud) when is_pid(Cloud) -> node_info(Cloud, print).
+node_info(Cloud, Flag) when is_pid(Cloud) ->
     Cloud ! info,
     receive
-        #nodeinfo{volume = Volume} ->
+        #nodeinfo{size = Size, volume = Volume} ->
             if Flag =:= print ->
-                    io:format(standard_error, "Cumulative Water Volume: ~pmm³~n", [Volume]);
+                    io:format(standard_error, "Cumulative Water Volume: ~pmm³\t", [Volume]),
+                    io:format(standard_error, "Dict size (~~# of drops): ~p~n", [Size]);
                 true -> ok
             end
     end,
@@ -43,28 +38,30 @@ initial_config() ->
     error_logger:tty(false),
     ok.
 
-run(Iters, Cloud) when is_integer(Iters) -> run(0, Iters, Cloud).
-run(Iters, Iters, Cloud) ->
+run(Iters, Cloud) when is_integer(Iters) -> run(0, Iters, Cloud, 0).
+run(Iters, Iters, Cloud, _) ->
     Cloud ! {die, self()},
     wait(Cloud);
-run(N, Iters, Cloud) ->
-    if N rem 1 =:= 0 ->
+run(N, Iters, Cloud, Time) ->
+    if N rem 20 =:= 0 ->
             io:format(standard_error, "~p, ", [N+1]),
+            io:format(standard_error, "~p ", [Time / (N+1)]),
+            node_info(Cloud),
             ok;
         true -> ok
     end,
-    move_drops(Cloud),
+    {T, _} = timer:tc(fun move_drops/1, [Cloud]),
     Cloud ! {size, self()},
     receive %% the size
         %% Keep going until max iterations are reached or only one drop left
         X when is_integer(X) and (X > ?FINAL_DROP_COUNT) ->
             %error_logger:info_report(io_lib:format("~p", [X])),
             %io:format(standard_error, "~p drops~n", [X]),
-            run(N + 1, Iters, Cloud);
+            run(N + 1, Iters, Cloud, Time + T / 1000000);
         X ->
             %error_logger:info_report(io_lib:format("Got ~p, Sending death message.~n", [X])),
             io:format(standard_error, "~nGot ~p, Sending death message.~n", [X]),
-            run(Iters, Iters, Cloud)
+            run(Iters, Iters, Cloud, Time + T / 1000000)
     end.
 
 move_drops(Cloud) ->
@@ -72,7 +69,7 @@ move_drops(Cloud) ->
     receive
         ok -> ok;
         {route_drops, DropDict} ->
-            %io:format(standard_error, "~nGot drops to route.~n", []),
+            %io:format(standard_error, "~p drops OOB ", [dict:size(DropDict)]),
             %io:format(standard_error, "~p~n", [DropDict]),
             Keepers = node:handle_boundary_drops(#nodestate{}, DropDict),
             %io:format(standard_error, "Handled boundary cases. (~p out of about ~p)~n",
