@@ -39,8 +39,15 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
             parent = Parent
         }).
 init(Parent) when is_pid(Parent) -> init(#nodestate{deity = Parent});
-init(S = #nodestate{}) ->
+init(S = #nodestate{x1 = X1, y1 = Y1, z1 = Z1, x2 = X2, y2 = Y2, z2 = Z2}) ->
     initial_config(),
+    put(x1, X1),
+    put(y1, Y1),
+    put(z1, Z1),
+    put(x2, X2),
+    put(y2, Y2),
+    put(z2, Z2),
+    put(domain_range, {X1, Y1, Z1, X2, Y2, Z2}),
     %fprof:apply(fun drop_loop/1, [S]).
     drop_loop(S).
 
@@ -142,7 +149,7 @@ spatial_volume(S = #nodestate{}) ->
     (S#nodestate.y2 - S#nodestate.y1 + 1) *
     (S#nodestate.z2 - S#nodestate.z1 + 1).
 
-%% This version is slower...
+%% This version is faster for large domains...
 spawn_new_drops(S = #nodestate{}) ->
     spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
 %% nodestate -> Density -> nodestate
@@ -209,19 +216,77 @@ add_drops([{Coord, D}|OtherDs], DropDict) when is_tuple(Coord) ->
 %% Return new dict of drops
 %% {Coord, Drop} -> DropDict -> DropDict
 add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
-    case dict:find(Coord, DropDict) of
+    if NewDrop#dropstate.size * ?COLLISION_SCALE_CHECK > 1 ->
+            %io:format(standard_error, "Collision testing~n~p~n~p~n",
+            %[{Coord,NewDrop},DropDict]),
+            {OurDrop, CheckedDict} = drop_intersection({Coord,NewDrop}, DropDict),
+            %CheckedDict = dict:new(),
+            %io:format(standard_error, "OLD~n~w~nNEW~n~w~n",
+            %[dict:to_list(DropDict), dict:to_list(CheckedDict)]);
+            ok;
+        true->
+            OurDrop = NewDrop,
+            CheckedDict = DropDict
+    end,
+    case dict:find(Coord, CheckedDict) of
         {ok, DropList} ->
-            NewDropList = handle_collision(NewDrop, DropList),
+            NewDropList = handle_collision(OurDrop, DropList),
             %% This SHOULD be the only time that a drop can grow, so we will
             %% only test for size here.
             %% TODO
             % * io:format("Replacing ~p with ~p~n", [DropList, NewDropList]),
-            NewDrops = dict:store(Coord, NewDropList, DropDict),
+            NewDrops = dict:store(Coord, NewDropList, CheckedDict),
             NewDrops;
         error ->
-            % * io:format("Storing ~p~n", [[NewDrop]]),
-            NewDrops = dict:store(Coord, [NewDrop], DropDict),
+            % * io:format("Storing ~p~n", [[OurDrop]]),
+            NewDrops = dict:store(Coord, [OurDrop], CheckedDict),
             NewDrops
+    end.
+
+%% Give it a Drop and a dict and it will soak up drops that intersect into
+%% the drop. Doesn't add the final drop
+drop_intersection({{X1,Y1,Z1}, NewDrop}, DropDict) when not is_list(NewDrop) ->
+    {Xmin, Ymin, Zmin, Xmax, Ymax, Zmax} = get(domain_range), %% Set during init()
+    %io:format(standard_error, "1 ", []),
+    SearchSize = round(NewDrop#dropstate.size * ?COLLISION_SCALE_CHECK),
+    RawCoordList = lists:usort(lists:append([
+            [{X+X1,Y+Y1,Z+Z1},{Y+Y1,X+X1,Z+Z1},{X+X1,-Y+Y1,Z+Z1},
+                {-X+X1,Y+Y1,Z+Z1},{-X+X1,-Y+Y1,Z+Z1},{-Y+Y1,X+X1,Z+Z1},
+                {Y+Y1,-X+X1,Z+Z1},{-Y+Y1,-X+X1,Z+Z1}]
+            || X <- lists:seq(0,SearchSize),
+            Y <- lists:seq(0,SearchSize),
+            Z <- lists:seq(0,0), %% Not going to do 3D yet
+            X >= Y,
+            math:pow((X*X + Y*Y + 0*0), 0.5) =< SearchSize %% Not going to do 3D yet
+        ]
+    )),
+    %io:format(standard_error, "RawCoordList ~p~n", [RawCoordList]),
+    CoordList = lists:filter(fun(C) -> is_local(
+                    #nodestate{x1 = Xmin, y1 = Ymin, z1 = Zmin, x2 = Xmax, y2 = Ymax,
+                        z2 = Zmax},
+                    C) end,
+        RawCoordList),
+    %io:format(standard_error, "CoordList ~p~n", [CoordList]),
+    drop_intersection(CoordList, NewDrop, DropDict).
+drop_intersection([], Drop, DropDict) ->
+    %io:format(standard_error, "2 ", []),
+    {Drop, DropDict};
+drop_intersection([Coord|CoordList], Drop, DropDict) ->
+    case dict:find(Coord, DropDict) of
+        {ok, PreCollideDropList} ->
+            case handle_collision(Drop, PreCollideDropList) of
+                [OurDrop|PostCollideDropList] when PostCollideDropList =:= [] ->
+                    %io:format(standard_error, "3 ~p   ~w + ~w = ~w ~w ERASE~n",
+                        %[Coord, Drop, PreCollideDropList, OurDrop, PostCollideDropList]),
+                    PostCollideDropDict = dict:erase(Coord, DropDict);
+                [OurDrop|PostCollideDropList] ->
+                    %io:format(standard_error, "3 ~p   ~w + ~w = ~w ~w~n",
+                        %[Coord, Drop, PreCollideDropList, OurDrop, PostCollideDropList]),
+                    PostCollideDropDict = dict:store(Coord, PostCollideDropList, DropDict)
+            end,
+            drop_intersection(CoordList, OurDrop, PostCollideDropDict);
+        error ->
+            drop_intersection(CoordList, Drop, DropDict)
     end.
 
 
