@@ -445,9 +445,12 @@ handle_boundary_drop(
 
 %% Return true if the drop D is in domain of S, else false.
 %% nodestate -> {{Coords}, Drop} -> Bool
+is_local(S = #nodestate{}, {{X, Y, Z}, _Drop}) ->
+    is_local(S, {X,Y,Z});
 is_local(
-    #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
-    {{X, Y, Z}, _Drop}) ->
+    _S = #nodestate{x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
+    {X, Y, Z}) ->
+    %io:format(standard_error, "~p ~p~n", [S, {X,Y,Z}]),
     not ((X < X1) or (Y < Y1) or (Z < Z1)
         or (X > X2) or (Y > Y2) or (Z > Z2)).
 
