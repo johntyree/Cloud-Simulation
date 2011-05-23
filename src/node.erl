@@ -142,7 +142,7 @@ water_volume(#nodestate{drops = Dropdict}) ->
     %Coords = dict:fetch_keys(Dropdict),
     Drop = dict:fold(fun(_, Ds, D) -> lists:foldl(fun drop:coalesce/2, D,
                     Ds) end, drop:new(0), Dropdict),
-    Drop#dropstate.size.
+    drop:volume(Drop#dropstate.size).
 
 spatial_volume(S = #nodestate{}) ->
     (S#nodestate.x2 - S#nodestate.x1 + 1) *
