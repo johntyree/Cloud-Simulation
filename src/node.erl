@@ -229,6 +229,10 @@ add_drops([{Coord, D}|OtherDs], DropDict) when is_tuple(Coord) ->
 %% if drops already present at that location handle the collision.
 %% Return new dict of drops
 %% {Coord, Drop} -> DropDict -> DropDict
+%lists:append([[{X,Y,Z},{Y,X,Z},{X,-Y,Z},{-X,Y,Z},{-X,-Y,Z},{-Y,X,Z},{Y,-X,Z},{-Y,-X,Z}]
+        %|| X <- lists:seq(0,5), Y <- lists:seq(0,5), Z <- lists:seq(0,0), X
+        %>= Y, math:pow(round((X*X + Y*Y + Z*Z)), 0.5) =< 5]).
+
 add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
     if NewDrop#dropstate.size * ?COLLISION_SCALE_CHECK > 1 ->
             %io:format(standard_error, "Collision testing~n~p~n~p~n",
