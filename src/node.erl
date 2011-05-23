@@ -339,7 +339,7 @@ rain_mvmt(Coord, Drop = #dropstate{size = Size}) ->
         %true -> ok
     %end,
     {migrate(Coord, random_direction(
-                0 - ?WINDSPEED, 0, % X
+                0 - ?WINDSPEED, -?WINDSPEED * 0.3, % X
                 -Tvelocity + ?UPDRAFT, -Tvelocity * 0.3 + ?UPDRAFT, % Y
                 0, 0 % Z
             )
@@ -414,9 +414,9 @@ handle_boundary_drops(S, [C|Coords], OldDrops, NewDropAcc) ->
 handle_boundary_drop(
     #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
     {{X, Y, Z}, Drop}) ->
-    NewX = positive_periodic(X, X1, X2),
-    NewY = positive_periodic(Y, Y1, Y2),
-    NewZ = positive_periodic(Z, Z1, Z2),
+    NewX = positive_mirrored(X, X1, X2),
+    NewY = positive_mirrored(Y, Y1, Y2),
+    NewZ = positive_mirrored(Z, Z1, Z2),
     case {{NewX, NewY, NewZ}, Drop} of
         {{undefined, _, _}, _} -> undefined;
         {{_, undefined, _}, _} -> undefined;

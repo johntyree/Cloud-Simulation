@@ -114,6 +114,15 @@ positive_periodic(Val, _Min, Max) when Val > Max ->
 positive_periodic(Val, Min, _Max) when Val < Min -> undefined;
 positive_periodic(Val, _Min, _Max) -> Val.
 
+
+positive_mirrored(Val, _Min, Max) when Val > Max ->
+    round(Max * (1 - random:uniform() * 0.10));
+positive_mirrored(Val, Min, _Max) when Val < Min -> undefined;
+positive_mirrored(Val, _Min, _Max) -> Val.
+
+
+
+
 print_dict(D) ->
     dict:map(fun(K, V) -> io:format("~p: ~p~n", [K, V]) end, D),
     ok.

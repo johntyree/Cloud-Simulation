@@ -43,9 +43,9 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
 %% MILLIMETERS PER SECOND, FOLKS
 terminal_velocity(#dropstate{size = Size}) -> terminal_velocity(Size);
 terminal_velocity(Size) when Size > (?HALF_SPLIT_SIZE / 27) ->
-    (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE / 60), 0.5)) * 1000;
+    (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE / 60), 0.5)) * 10;
 terminal_velocity(Size) when Size > 0.04 -> 1298.16 * math:pow((-0.0258 + 10
-            * Size), 8) * 1000;
+            * Size), 8) * 10;
 terminal_velocity(_Size) -> 0.
 
 %%%%%%%%%%%%%%%%%%%%%%%
