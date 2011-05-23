@@ -31,7 +31,7 @@ saturation_pressure(C) when C >= -50, C =< 102 ->
 
 % Fast gaussian generator algorithm from (Leva 1992)
 % http://portal.acm.org/citation.cfm?id=138364
-gaussian(Mu, Sigma) ->
+gaussian(Mu, Sigma) when is_float(Mu), is_float(Sigma) ->
     S = 0.449871,
     T = -0.386595,
     A = 0.19600,
@@ -54,8 +54,8 @@ gaussian(Mu, Sigma) ->
             end
     end.
 
-random_uniform_nonboundary(U, U) -> U;
-random_uniform_nonboundary(L, U) ->
+random_uniform_nonboundary(U, U) when is_number(U) -> U;
+random_uniform_nonboundary(L, U) when is_number(U), is_number(L) ->
     X = (U - L) * random:uniform() + L,
     %crypto:random_bytes
     if L == X; U == X -> %% To match integers
@@ -65,7 +65,7 @@ random_uniform_nonboundary(L, U) ->
     end.
 
 %% Inclusive!
-random_int(U) -> random_int(0, U).
+random_int(U) when is_integer(U) -> random_int(0, U).
 %% Can't have negatives
 random_int(L, U) when is_integer(L), is_integer(U), L =< U ->
     crypto:rand_uniform(0, U-L+1) + L;
@@ -73,8 +73,8 @@ random_int(L, U) when is_integer(L), is_integer(U), L =< U ->
 random_int(L, U) when is_integer(L), is_integer(U), L > U ->
     random_int(U, L).
 
-scaled_random_int(U) -> scaled_random_int(0, U).
-scaled_random_int(RawL, RawU) when RawL =< RawU ->
+scaled_random_int(U) when is_float(U) -> scaled_random_int(0, U).
+scaled_random_int(RawL, RawU) when is_float(RawL), is_float(RawU), RawL =< RawU ->
     L = RawL * ?SCALE,
     U = RawU * ?SCALE,
     FL = floor(L),
@@ -115,10 +115,11 @@ positive_periodic(Val, Min, _Max) when Val < Min -> undefined;
 positive_periodic(Val, _Min, _Max) -> Val.
 
 
-positive_mirrored(Val, _Min, Max) when Val > Max ->
+positive_mirrored(Val, _Min, Max) when is_integer(Max), is_integer(Val), Val > Max ->
     round(Max * (1 - random:uniform() * 0.10));
-positive_mirrored(Val, Min, _Max) when Val < Min -> undefined;
-positive_mirrored(Val, _Min, _Max) -> Val.
+positive_mirrored(Val, Min, _Max) when is_integer(Min), is_integer(Val), Val < Min ->
+    undefined;
+positive_mirrored(Val, _Min, _Max) when is_integer(Val) -> Val.
 
 
 
@@ -154,8 +155,8 @@ flush(N, Flag, Acc) ->
             flush(N, Flag, Acc)
     end.
 
-radius(Volume) when is_number(Volume) -> math:pow(0.75 * Volume / math:pi(), 1/3).
-volume(Radius) when is_number(Radius) -> 4/3 * math:pi() * Radius * Radius *
+radius(Volume) when is_float(Volume) -> math:pow(0.75 * Volume / math:pi(), 1/3).
+volume(Radius) when is_float(Radius) -> 4/3 * math:pi() * Radius * Radius *
     Radius.
 
 percent_true(X) ->
@@ -163,7 +164,7 @@ percent_true(X) ->
 
 avg_value(X) -> lists:sum([ X() || _ <- lists:seq(1,1000)]) / 1000.
 
-floor(X) ->
+floor(X) when is_float(X) ->
     T = erlang:trunc(X),
     case (X - T) of
         Neg when Neg < 0 -> T - 1;
@@ -171,7 +172,7 @@ floor(X) ->
         _ -> T
     end.
 
-ceiling(X) ->
+ceiling(X) when is_float(X) ->
     T = erlang:trunc(X),
     case (X - T) of
         Neg when Neg < 0 -> T;
@@ -179,7 +180,7 @@ ceiling(X) ->
         _ -> T
     end.
 
-round_out(X) when X < 0 -> trunc(X) - 1;
-round_out(X) when X > 0 -> trunc(X) + 1;
+round_out(X) when is_float(X), X < 0 -> trunc(X) - 1;
+round_out(X) when is_float(X), X > 0 -> trunc(X) + 1;
 round_out(0) -> 0.
 

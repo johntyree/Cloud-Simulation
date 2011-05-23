@@ -153,7 +153,7 @@ spatial_volume(S = #nodestate{}) ->
 spawn_new_drops(S = #nodestate{}) ->
     spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
 %% nodestate -> Density -> nodestate
-spawn_new_drops(S = #nodestate{}, Density) ->
+spawn_new_drops(S = #nodestate{}, Density) when is_float(Density) ->
     DropList = lists:map(fun(_) -> {new_position(S), drop:new()} end, lists:seq(1, round(Density *
                 spatial_volume(S)))),
     S#nodestate{drops = add_drops(DropList, S#nodestate.drops)}.
@@ -177,7 +177,8 @@ create_drop(S = #nodestate{}) ->
     NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
     S#nodestate{drops = NewDrops}.
 new_position(S = #nodestate{ x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
-        Z2}) ->
+        Z2}) when is_integer(X1), is_integer(X2), is_integer(Y1), is_integer(Y2),
+is_integer(Z1), is_integer(Z2) ->
     R = random_int(spatial_volume(S)-1),
     XRange = X2 - X1 + 1,
     YRange = Y2 - Y1 + 1,
@@ -263,7 +264,8 @@ add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
 
 %% Give it a Drop and a dict and it will soak up drops that intersect into
 %% the drop. Doesn't add the final drop
-drop_intersection({{X1,Y1,Z1}, NewDrop}, DropDict) when not is_list(NewDrop) ->
+drop_intersection({{X1,Y1,Z1}, NewDrop}, DropDict) when is_integer(X1),
+is_integer(Y1), is_integer(Z1), not is_list(NewDrop) ->
     {Xmin, Ymin, Zmin, Xmax, Ymax, Zmax} = get(domain_range), %% Set during init()
     %io:format(standard_error, "1 ", []),
     SearchSize = round(NewDrop#dropstate.size * ?COLLISION_SCALE_CHECK),
@@ -336,8 +338,9 @@ move_drops(Dropdict) ->
 %% Change the actual position,
 %% This is basically just zipWith((+), T1, T2) where T's are three-tuples
 %% ret: {coords}
-migrate({X, Y, Z}) -> migrate({X, Y, Z}, random_direction()).
-migrate({X, Y, Z}, {DX, DY, DZ}) ->
+migrate({X, Y, Z}) when is_integer(X), is_integer(Y), is_integer(Z) -> migrate({X, Y, Z}, random_direction()).
+migrate({X, Y, Z}, {DX, DY, DZ}) when is_integer(X), is_integer(Y),
+is_integer(Z), is_integer(DX), is_integer(DY), is_integer(DZ)  ->
     NewX = X + DX,
     NewY = Y + DY,
     NewZ = Z + DZ,
@@ -348,7 +351,7 @@ migrate({X, Y, Z}, {DX, DY, DZ}) ->
 %% {Coord} -> dropstate -> {{Coord}, dropstate}
 %% {Coord} -> {Coord}
 %% Small drops go UP due to updrafts
-rain_mvmt(Coord, Drop = #dropstate{size = Size}) ->
+rain_mvmt(Coord, Drop = #dropstate{size = Size}) when is_float(Size) ->
     %% MILLIMETERS PER SECOND, FOLKS
     Tvelocity = drop:terminal_velocity(Size),
     %if Tvelocity > 0 ->
@@ -368,7 +371,9 @@ rain_mvmt(Coord) -> migrate(Coord).
 random_direction() -> random_direction(1).
 random_direction(Step) -> random_direction(-Step, Step, -Step, Step, -Step, Step).
 %% Xmin = Ymin = 0
-random_direction(Xmin, Xmax, Ymin, Ymax, Zmin, Zmax) ->
+random_direction(Xmin, Xmax, Ymin, Ymax, Zmin, Zmax) when is_float(Xmin),
+is_float(Ymin), is_float(Zmin), is_float(Xmax), is_float(Ymax),
+is_float(Zmax) ->
     %io:format("~p ~p ~p ~p ~p ~p~n", [Xmin, Xmax, Ymin, Ymax, Zmin, Zmax]),
     %% This scaling is a disaster right now....
     DX = scaled_random_int(Xmin, Xmax),
@@ -445,11 +450,13 @@ handle_boundary_drop(
 
 %% Return true if the drop D is in domain of S, else false.
 %% nodestate -> {{Coords}, Drop} -> Bool
-is_local(S = #nodestate{}, {{X, Y, Z}, _Drop}) ->
+is_local(S = #nodestate{}, {{X, Y, Z}, _Drop}) when is_integer(X),
+is_integer(Y), is_integer(Z)  ->
     is_local(S, {X,Y,Z});
-is_local(
-    _S = #nodestate{x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 = Z2},
-    {X, Y, Z}) ->
+is_local( _S = #nodestate{x1 = X1, x2 = X2, y1 = Y1, y2 = Y2, z1 = Z1, z2 =
+        Z2}, {X, Y, Z}) when is_integer(X1), is_integer(X2), is_integer(Y1),
+is_integer(Y2), is_integer(Z1), is_integer(Z2), is_integer(X), is_integer(Y),
+is_integer(Z)  ->
     %io:format(standard_error, "~p ~p~n", [S, {X,Y,Z}]),
     not ((X < X1) or (Y < Y1) or (Z < Z1)
         or (X > X2) or (Y > Y2) or (Z > Z2)).

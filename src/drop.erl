@@ -9,8 +9,9 @@
 new() -> new(new_size()).
 new(Size) when is_number(Size), Size >= 0 -> #dropstate{size = Size}.
 
-coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
-    NewSize = radius(volume(S1#dropstate.size) + volume(S2#dropstate.size)),
+coalesce(S1 = #dropstate{size = Size}, #dropstate{size = Size2}) when
+is_float(Size), is_float(Size2) ->
+    NewSize = radius(volume(Size) + volume(Size2)),
     S1#dropstate{size = NewSize}.
 
 coalesce_test(S1 = #dropstate{}, S2 = #dropstate{}) ->
@@ -25,7 +26,7 @@ end.
 %% Take any size drop, return a list of either one or two drops depending on
 %% size and probability to split.
 % dropstate -> [dropstate]
-split(S = #dropstate{size = Size}) ->
+split(S = #dropstate{size = Size}) when is_float(Size) ->
     case it_splits(Size) of
         true ->
             NewSize = radius(volume(Size) / 2),
@@ -36,8 +37,8 @@ split(S = #dropstate{size = Size}) ->
 
 %% Return true if the drop splits, based on stochastically based on size.
 %% int -> bool
-it_splits(Size) when is_number(Size), Size =< ?HALF_SPLIT_SIZE - 1 -> false;
-it_splits(Size) when is_number(Size), Size >= 0 ->
+it_splits(Size) when is_float(Size), Size =< ?HALF_SPLIT_SIZE - 1 -> false;
+it_splits(Size) when is_float(Size), Size >= 0 ->
     1 - (1 / (1 + math:pow(1 - ?HALF_SPLIT_SIZE + Size, ?SPLIT_STEEPNESS)))
     > random_uniform_nonboundary(0,1).
 
@@ -50,12 +51,12 @@ it_splits(Size) when is_number(Size), Size >= 0 ->
 %% 0.1mm -> 700 mm/s
 %% 1mm -> 5500 mm/s
 %% MILLIMETERS PER SECOND, FOLKS
-terminal_velocity(#dropstate{size = Size}) -> terminal_velocity(Size);
-terminal_velocity(Size) when Size > (?HALF_SPLIT_SIZE / 27) ->
+terminal_velocity(#dropstate{size = Size}) when is_float(Size) -> terminal_velocity(Size);
+terminal_velocity(Size) when is_float(Size), Size > (?HALF_SPLIT_SIZE / 27) ->
     (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE / 60), 0.5)) * 10;
-terminal_velocity(Size) when Size > 0.04 -> 1298.16 * math:pow((-0.0258 + 10
+terminal_velocity(Size) when is_float(Size), Size > 0.04 -> 1298.16 * math:pow((-0.0258 + 10
             * Size), 8) * 10;
-terminal_velocity(_Size) -> 0.
+terminal_velocity(_) -> 0.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%                   %%
