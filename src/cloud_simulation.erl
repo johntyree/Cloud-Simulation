@@ -9,7 +9,7 @@ main([N]) ->
     initial_config(),
     Cloud = spawn(node, init, [self()]),
     monitor(process, Cloud),
-    Cloud ! {repopulate, 1},
+    Cloud ! {repopulate, 1.0},
     node_info(Cloud),
     run(Iters, Cloud),
     %fprof:apply(fun run/2, [Iters, Cloud]),
@@ -27,9 +27,9 @@ node_info(Cloud, Flag) when is_pid(Cloud) ->
                     io:format(standard_error, "Cumulative Water Volume: ~pmm³\t", [Volume]),
                     io:format(standard_error, "Dict size (~~# of drops): ~p~n", [Size]);
                 true -> ok
-            end
-    end,
-    Volume.
+            end;
+        X -> io:format(standard_error, "Got ~p instead of nodeinfo", [X])
+    end.
 
 initial_config() ->
     %error_logger:logfile({open, "log"}),
@@ -74,8 +74,9 @@ move_drops(Cloud) ->
             Keepers = node:handle_boundary_drops(#nodestate{}, DropDict),
             %io:format(standard_error, "Handled boundary cases. (~p out of about ~p)~n",
                 %[length(Keepers), dict:size(DropDict)]),
-            [Cloud ! {new_drop, D} || D <- Keepers]
+            [Cloud ! {new_drop, D} || D <- Keepers];
             %io:format(standard_error, "Resent drops to Cloud.~n", [])
+        X -> io:format(standard_error, "Got ~p instead of route_drops", [X])
     end,
     ok.
 

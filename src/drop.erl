@@ -71,8 +71,8 @@ terminal_velocity(_) -> 0.
 %% Changing this to have larger drop sizes initially. Otherwise we don't get
 %% there without ENORMOUS domains
 new_size() ->
-    X = gaussian(0.035, 0.004),
-    %X = gaussian(0.05, 0.01),
+    %X = gaussian(0.025, 0.006),
+    X = gaussian(0.05, 0.006),
     if X =< 0 ->
             new_size();
         true ->

@@ -54,6 +54,11 @@ init(S = #nodestate{x1 = X1, y1 = Y1, z1 = Z1, x2 = X2, y2 = Y2, z2 = Z2}) ->
 drop_loop(S = #nodestate{}) ->
     receive
         move ->
+            Gust = case random:uniform() of
+                X when X > 0.98 -> 2.0;
+                X -> X * 1
+            end,
+            put(gust, Gust),
             Drops = move_drops(S#nodestate.drops),
             %io:format("Moved Drops.~n"),
             {Keep, Transfer} = filter_drops(S, Drops),
@@ -141,7 +146,7 @@ info(S = #nodestate{}) ->
 water_volume(#nodestate{drops = Dropdict}) ->
     %Coords = dict:fetch_keys(Dropdict),
     Drop = dict:fold(fun(_, Ds, D) -> lists:foldl(fun drop:coalesce/2, D,
-                    Ds) end, drop:new(0), Dropdict),
+                    Ds) end, drop:new(0.0), Dropdict),
     drop:volume(Drop#dropstate.size).
 
 spatial_volume(S = #nodestate{}) ->
@@ -192,7 +197,7 @@ is_integer(Z1), is_integer(Z2) ->
 %% dropstate -> [dropstate] -> [dropstate]
 %% Return new list of drops
 handle_collision(D, []) -> [D];
-handle_collision(D, OldDrops) when is_list(OldDrops) ->
+handle_collision(D, OldDrops) when is_list(OldDrops), not is_list(D) ->
     % * io:format("Handle collision between ~p and ~p ", [D, OldDrops]),
     %% Phase 1, we just coalesce them and call it a day
     %P1 = [lists:foldl(fun drop:coalesce/2, D, OldDrops)],
@@ -318,7 +323,7 @@ move_drops(Dropdict) ->
     %move_drops(Coords, Drops, dict:new()).
     MovedDropList = dict:fold(
         fun(Coord, Ds, Acc0) ->
-                lists:append(lists:map(fun(D) -> rain_mvmt(Coord, D) end,
+                lists:append(lists:flatmap(fun(D) -> rain_mvmt(Coord, D) end,
                         Ds), Acc0)
         end,
         [],
@@ -359,16 +364,18 @@ rain_mvmt(Coord, Drop = #dropstate{size = Size}) when is_float(Size) ->
                     %Tvelocity]);
         %true -> ok
     %end,
-    {migrate(Coord, random_direction(
-                0 - ?WINDSPEED, -?WINDSPEED * 0.3, % X
-                -Tvelocity + ?UPDRAFT, -Tvelocity * 0.3 + ?UPDRAFT, % Y
-                0, 0 % Z
+    Gust = get(gust),
+    Drops = drop:split(Drop),
+    [{migrate(Coord, random_direction(
+                0.0 - Gust * ?WINDSPEED, Gust * -?WINDSPEED * 0.3, % X
+                -Tvelocity + Gust * ?UPDRAFT, -Tvelocity * 0.3 + Gust * ?UPDRAFT, % Y
+                0.0, 0.0 % Z
             )
-        ), Drop}.
-rain_mvmt(Coord) -> migrate(Coord).
+        ), D} || D <- Drops].
+rain_mvmt(Coord) -> [migrate(Coord)].
 
 %% Chose a random x and y movement from -1,0,1
-random_direction() -> random_direction(1).
+random_direction() -> random_direction(1.0).
 random_direction(Step) -> random_direction(-Step, Step, -Step, Step, -Step, Step).
 %% Xmin = Ymin = 0
 random_direction(Xmin, Xmax, Ymin, Ymax, Zmin, Zmax) when is_float(Xmin),
@@ -414,7 +421,6 @@ filter_drops(S, [D|Drops], Local, NonLocal) ->
 
 
 %% nodestate -> DropDict -> DropList
-%% TODO: Could be made faster by filtering the dict for local coords first.
 handle_boundary_drops(S, OldDrops) ->
     Coords = dict:fetch_keys(OldDrops),
     handle_boundary_drops(S, Coords, OldDrops, []).
