@@ -14,6 +14,18 @@ initial_config() ->
     random:seed(A, B, C),
     ok.
 
+mini() ->
+    X1 = 0, Y1 = 0, Z1 = 0, X2 = 10, Y2 = 10, Z2 = 1,
+    put(domain_range, {X1, Y1, Z1, X2, Y2, Z2}),
+    #nodestate{
+            x1 = X1,
+            y1 = Y1,
+            z1 = Z1,
+            x2 = X2,
+            y2 = Y2,
+            z2 = Z2
+        }.
+
 init() -> init(#nodestate{}).
 init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
     init(#nodestate{
