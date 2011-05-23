@@ -194,10 +194,24 @@ handle_collision(D, []) -> [D];
 handle_collision(D, OldDrops) when is_list(OldDrops) ->
     % * io:format("Handle collision between ~p and ~p ", [D, OldDrops]),
     %% Phase 1, we just coalesce them and call it a day
-    P1 = [lists:foldl(fun drop:coalesce/2, D, OldDrops)],
+    %P1 = [lists:foldl(fun drop:coalesce/2, D, OldDrops)],
+    P1 = maybe_walk(fun drop:coalesce/2, D, OldDrops),
     %% Phase 2, if a drop is too big, it may split into two
     P2 = lists:flatmap(fun drop:split/1, P1),
     P2.
+
+%% The incoming drop STAYS AT THE HEAD
+%% Fun(A, A) -> MaybeFun(A, A) -> [A] -> [A]
+maybe_walk(Fun, Elem, OldDrops) when is_list(OldDrops) ->
+    maybe_walk(Fun, Elem, OldDrops, []).
+maybe_walk(_Fun, Elem, [], Acc) -> [Elem|Acc];
+maybe_walk(Fun, Elem, [H|T], Acc) ->
+    case drop:coalesce_test(Elem, H) of
+        true ->
+            maybe_walk(Fun, Fun(H, Elem), T, Acc);
+        false ->
+            maybe_walk(Fun, Elem, T, [H|Acc])
+    end.
 
 %% Attempt to add a list of new drops to the dict.
 %% if drops already present at the locations, handle the collisions.

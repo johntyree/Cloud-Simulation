@@ -13,6 +13,15 @@ coalesce(S1 = #dropstate{}, S2 = #dropstate{}) ->
     NewSize = radius(volume(S1#dropstate.size) + volume(S2#dropstate.size)),
     S1#dropstate{size = NewSize}.
 
+coalesce_test(S1 = #dropstate{}, S2 = #dropstate{}) ->
+    case {S1#dropstate.size, S2#dropstate.size} of
+        {A, B} when (A > 2.5) or (B > 2.5) -> false;
+        {A, B} when (A < 0.4) or (B < 0.4) -> true;
+        {A, B} when (A > 1) or (B > 1) -> (random_uniform_nonboundary(0,1)
+                > 0.2);
+        {_A, _B} -> true
+end.
+
 %% Take any size drop, return a list of either one or two drops depending on
 %% size and probability to split.
 % dropstate -> [dropstate]
