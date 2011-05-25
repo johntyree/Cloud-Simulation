@@ -18,6 +18,17 @@ main([N]) ->
     init:stop(),
     ok.
 
+%% Set up environment, seed rng.
+%% ok
+initial_config() ->
+    %error_logger:logfile({open, "log"}),
+    <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
+    random:seed(A, B, C),
+    error_logger:tty(false),
+    ok.
+
+%% Print metadata about node Cloud to stderr.
+%% Pid -> ok
 node_info(Cloud) when is_pid(Cloud) -> node_info(Cloud, print).
 node_info(Cloud, Flag) when is_pid(Cloud) ->
     Cloud ! info,
@@ -31,13 +42,9 @@ node_info(Cloud, Flag) when is_pid(Cloud) ->
         X -> io:format(standard_error, "Got ~p instead of nodeinfo", [X])
     end.
 
-initial_config() ->
-    %error_logger:logfile({open, "log"}),
-    <<A:32,B:32,C:32>> = crypto:rand_bytes(12),
-    random:seed(A, B, C),
-    error_logger:tty(false),
-    ok.
-
+%% Run simulation on node Cloud. Kill after Iters timesteps or Cloud's drop
+%% count below FINAL_DROP_COUNT.
+%% Int -> Pid -> ok
 run(Iters, Cloud) when is_integer(Iters) -> run(0, Iters, Cloud, 0).
 run(Iters, Iters, Cloud, _) ->
     Cloud ! {die, self()},
@@ -64,6 +71,10 @@ run(N, Iters, Cloud, Time) ->
             run(Iters, Iters, Cloud, Time + T / 1000000)
     end.
 
+
+%% Tell Cloud to move drops one step. Handle out of bounds drops that are
+%% sent back.
+%% Pid -> ok
 move_drops(Cloud) ->
     Cloud ! move,
     receive
@@ -80,6 +91,8 @@ move_drops(Cloud) ->
     end,
     ok.
 
+%% Wait for Cloud to die.
+%% Pid -> ok
 wait(Cloud) ->
     receive
         {ok_im_dead, Cloud} -> ok;

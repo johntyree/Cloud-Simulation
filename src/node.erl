@@ -6,6 +6,8 @@
 -include_lib("node.hrl").
 -include_lib("drop.hrl").
 
+%% Set up environment, seed rng.
+%% ok
 initial_config() ->
     %{ok, F} = file:open("log", [write]),
     %group_leader(F, self()),
@@ -14,6 +16,9 @@ initial_config() ->
     random:seed(A, B, C),
     ok.
 
+%% Create a 10x10x0 domain for testing.
+%% Does not return immediately.
+%% nodestate
 mini() ->
     X1 = 0, Y1 = 0, Z1 = 0, X2 = 10, Y2 = 10, Z2 = 1,
     put(domain_range, {X1, Y1, Z1, X2, Y2, Z2}),
@@ -26,7 +31,13 @@ mini() ->
             z2 = Z2
         }.
 
+%% Create a nodestate with default values
+%% Does not return immediately.
+%% nodestate
 init() -> init(#nodestate{}).
+%% Create a nodestate from submitted values
+%% Does not return immediately.
+%% nodestate
 init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
     init(#nodestate{
             x1 = X1,
@@ -38,7 +49,12 @@ init({X1, Y1, Z1, X2, Y2, Z2}, Drops, Parent) when X1 > X2, Y1 > Y2, Z1 > Z2 ->
             drops = Drops,
             parent = Parent
         }).
+%% Create a nodestate with deity set to Parent, rest default.
+%% Pid -> nodestate
 init(Parent) when is_pid(Parent) -> init(#nodestate{deity = Parent});
+%% Start a node loop at nodestate S.
+%% Does not return immediately.
+%% nodestate -> ok
 init(S = #nodestate{x1 = X1, y1 = Y1, z1 = Z1, x2 = X2, y2 = Y2, z2 = Z2}) ->
     initial_config(),
     put(x1, X1),
@@ -51,8 +67,14 @@ init(S = #nodestate{x1 = X1, y1 = Y1, z1 = Z1, x2 = X2, y2 = Y2, z2 = Z2}) ->
     %fprof:apply(fun drop_loop/1, [S]).
     drop_loop(S).
 
+%% TODO: split these out into functions
+%% Run drop management loop for nodestate S.
+%% Does not return immediately.
+%% nodestate -> ok
 drop_loop(S = #nodestate{}) ->
     receive
+        %% Move the drops, filter the out of bounds ones and send them up to
+        %% parent
         move ->
             Gust = case random:uniform() of
                 X when X > 0.98 -> 2.0;
@@ -131,30 +153,40 @@ drop_loop(S = #nodestate{}) ->
             drop_loop(S)
     end.
 
-%% Return nodestate with ~ AREA * RELATIVE_HUMIDITY drops
+%% Return nodestate with AREA * RELATIVE_HUMIDITY drops replacing all
+%% previous drops.
 %% nodestate -> nodestate
 populate_domain(S = #nodestate{}) -> populate_domain(S, ?RELATIVE_HUMIDITY).
 populate_domain(S = #nodestate{}, Density) ->
     spawn_new_drops(S#nodestate{drops = dict:new()}, Density).
 
+%% Return metadata about nodestate S
+%% nodestate -> nodeinfo
 info(S = #nodestate{}) ->
     #nodeinfo{
         volume = water_volume(S),
         size = dict:size(S#nodestate.drops)
     }.
 
+%% Return cumulative water volume contained in nodestate.
+%% nodestate -> float
 water_volume(#nodestate{drops = Dropdict}) ->
     %Coords = dict:fetch_keys(Dropdict),
     Drop = dict:fold(fun(_, Ds, D) -> lists:foldl(fun drop:coalesce/2, D,
                     Ds) end, drop:new(0.0), Dropdict),
     drop:volume(Drop#dropstate.size).
 
+%% Return number of coordinates (area) of nodestate.
+%% nodestate -> integer
 spatial_volume(S = #nodestate{}) ->
     (S#nodestate.x2 - S#nodestate.x1 + 1) *
     (S#nodestate.y2 - S#nodestate.y1 + 1) *
     (S#nodestate.z2 - S#nodestate.z1 + 1).
 
 %% This version is faster for large domains...
+%% Create new drops in the domain according to RELATIVE_HUMIDITY.
+%% Return nodestate with area * relative_humidity drops added
+%% nodestate -> nodestate
 spawn_new_drops(S = #nodestate{}) ->
     spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
 %% nodestate -> Density -> nodestate
@@ -178,6 +210,8 @@ xspawn_new_drops(S = #nodestate{}, Density) ->
     %io:format("Adding ~p new drops~n",[length(DropList)]),
     S#nodestate{drops = add_drops(DropList, S#nodestate.drops)}.
 
+%% Add a single, randomly placed drop to the domain
+%% nodestate -> nodestate
 create_drop(S = #nodestate{}) ->
     NewDrops = add_drop({new_position(S), drop:new()}, S#nodestate.drops),
     S#nodestate{drops = NewDrops}.
@@ -196,6 +230,7 @@ is_integer(Z1), is_integer(Z2) ->
 %% When two drops meet, we do something.
 %% dropstate -> [dropstate] -> [dropstate]
 %% Return new list of drops
+%% dropstate -> [dropstate] -> [dropstate]
 handle_collision(D, []) -> [D];
 handle_collision(D, OldDrops) when is_list(OldDrops), not is_list(D) ->
     % * io:format("Handle collision between ~p and ~p ", [D, OldDrops]),
@@ -206,7 +241,11 @@ handle_collision(D, OldDrops) when is_list(OldDrops), not is_list(D) ->
     P2 = lists:flatmap(fun drop:split/1, P1),
     P2.
 
-%% The incoming drop STAYS AT THE HEAD
+%% Walk over a list and cumulatively do something to it, with each
+%% interaction determined by chance (coalesce_test).
+%% Return a list of drops after the incoming drop has interacted with each of
+%% the other ones.
+%% The incoming drop STAYS AT THE HEAD so you can pull it off again.
 %% Fun(A, A) -> MaybeFun(A, A) -> [A] -> [A]
 maybe_walk(Fun, Elem, OldDrops) when is_list(OldDrops) ->
     maybe_walk(Fun, Elem, OldDrops, []).
@@ -219,7 +258,7 @@ maybe_walk(Fun, Elem, [H|T], Acc) ->
             maybe_walk(Fun, Elem, T, [H|Acc])
     end.
 
-%% Attempt to add a list of new drops to the dict.
+%% Add a list of new drops to the dict.
 %% if drops already present at the locations, handle the collisions.
 %% Return new dict of drops
 %% [{Coord, [Drop]}] -> DropDict -> DropDict
@@ -231,14 +270,8 @@ add_drops([{Coord, [D|Ds]}|OtherDs], DropDict) ->
 add_drops([{Coord, D}|OtherDs], DropDict) when is_tuple(Coord) ->
     add_drops(OtherDs, add_drop({Coord, D}, DropDict)).
 
-%% Attempt to add the new drop to the dict.
-%% if drops already present at that location handle the collision.
-%% Return new dict of drops
-%% {Coord, Drop} -> DropDict -> DropDict
-%lists:append([[{X,Y,Z},{Y,X,Z},{X,-Y,Z},{-X,Y,Z},{-X,-Y,Z},{-Y,X,Z},{Y,-X,Z},{-Y,-X,Z}]
-        %|| X <- lists:seq(0,5), Y <- lists:seq(0,5), Z <- lists:seq(0,0), X
-        %>= Y, math:pow(round((X*X + Y*Y + Z*Z)), 0.5) =< 5]).
-
+%% Add a single drop to the dict. NOT in a list.
+%% {Coord, NewDrop} -> DropDict -> DropDict
 add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
     if NewDrop#dropstate.size * ?COLLISION_SCALE_CHECK > 1 ->
             %io:format(standard_error, "Collision testing~n~p~n~p~n",
@@ -267,8 +300,9 @@ add_drop({Coord, NewDrop}, DropDict) when not is_list(NewDrop) ->
             NewDrops
     end.
 
-%% Give it a Drop and a dict and it will soak up drops that intersect into
-%% the drop. Doesn't add the final drop
+%% Give it a Drop and a dict and it will stochastically soak up drops that
+%% intersect with NewDrop. Doesn't add the final drop
+%% {{Coord}, dropstate} -> DropDict -> {dropstate, DropDict}
 drop_intersection({{X1,Y1,Z1}, NewDrop}, DropDict) when is_integer(X1),
 is_integer(Y1), is_integer(Z1), not is_list(NewDrop) ->
     {Xmin, Ymin, Zmin, Xmax, Ymax, Zmax} = get(domain_range), %% Set during init()
@@ -319,8 +353,6 @@ drop_intersection([Coord|CoordList], Drop, DropDict) ->
 %% DropDict -> DropDict
 -spec move_drops(dict()) -> dict().
 move_drops(Dropdict) ->
-    %Coords = dict:fetch_keys(Drops),
-    %move_drops(Coords, Drops, dict:new()).
     MovedDropList = dict:fold(
         fun(Coord, Ds, Acc0) ->
                 lists:append(lists:flatmap(fun(D) -> rain_mvmt(Coord, D) end,
@@ -330,19 +362,12 @@ move_drops(Dropdict) ->
         Dropdict),
     %% Cumulative dict of new drops
     lists:foldl(fun add_drop/2, dict:new(), MovedDropList).
-%move_drops([], _, NewDrops) -> NewDrops;
-%move_drops([C|Coords], OldDrops, NewDrops) ->
-    %%% List of drops at coord C.
-    %DropList = dict:fetch(C, OldDrops),
-    %%% List of {NewCoord, Drop} to be added
-    %MovedDropList = lists:map(fun(D) -> drop:move({C, D}) end, DropList),
-    %%% Cumulative dict of new drops
-    %NewDropDict = add_drops(MovedDropList, NewDrops),
-    %move_drops(Coords, OldDrops, NewDropDict).
+
 
 %% Change the actual position,
 %% This is basically just zipWith((+), T1, T2) where T's are three-tuples
-%% ret: {coords}
+%% Coord -> Coord
+%% Coord -> Coord -> Coord
 migrate({X, Y, Z}) when is_integer(X), is_integer(Y), is_integer(Z) -> migrate({X, Y, Z}, random_direction()).
 migrate({X, Y, Z}, {DX, DY, DZ}) when is_integer(X), is_integer(Y),
 is_integer(Z), is_integer(DX), is_integer(DY), is_integer(DZ)  ->
@@ -353,9 +378,10 @@ is_integer(Z), is_integer(DX), is_integer(DY), is_integer(DZ)  ->
 
 %% If you give it {Coord, Drop} it returns the same.
 %% Otherwise it just maps to migrate(Coord)
-%% {Coord} -> dropstate -> {{Coord}, dropstate}
 %% {Coord} -> {Coord}
+%% {Coord} -> dropstate -> {{Coord}, dropstate}
 %% Small drops go UP due to updrafts
+rain_mvmt(Coord) -> [migrate(Coord)].
 rain_mvmt(Coord, Drop = #dropstate{size = Size}) when is_float(Size) ->
     %% MILLIMETERS PER SECOND, FOLKS
     Tvelocity = drop:terminal_velocity(Size),
@@ -372,9 +398,10 @@ rain_mvmt(Coord, Drop = #dropstate{size = Size}) when is_float(Size) ->
                 0.0, 0.0 % Z
             )
         ), D} || D <- Drops].
-rain_mvmt(Coord) -> [migrate(Coord)].
 
 %% Chose a random x and y movement from -1,0,1
+%% Coord
+%% float -> Coord
 random_direction() -> random_direction(1.0).
 random_direction(Step) -> random_direction(-Step, Step, -Step, Step, -Step, Step).
 %% Xmin = Ymin = 0
@@ -391,22 +418,12 @@ is_float(Zmax) ->
 
 %% Filter out the drops that have left our domain.
 %% nodestate -> DropDict -> {Local DropDict, Nonlocal DropDict}
-%% If the parent is undefined, boundaries become periodic in all directions for now.
-%filter_drops(S = #nodestate{parent = P}, Drops) when P =:= undefined ->
-    %% * io:format("Parent Undefined~n"),
-    %{Local, NonLocal} = filter_drops(S, dict:to_list(Drops), [], []),
-    %% * io:format("Filtered Drops:~n"),
-    %% * io:format("~p~n", [{Local, NonLocal}]),
-    %% * io:format("Periodicisin' ~p~n", [{Local, NonLocal}]),
-    %Localized = handle_boundary_drops(S, NonLocal),
-    %% * io:format("Periodicised:~n~p~n", [Localized]),
-    %% * io:format("Adding to keepers~n~p~n~p~n", [dict:to_list(Localized), Local]),
-    %{add_drops(dict:to_list(Localized), Local), []};
 filter_drops(S = #nodestate{}, Drops) ->
     % * io:format("Got drop dict, making list~n"),
     filter_drops(S, dict:to_list(Drops), [], []).
 filter_drops(_S, [], Local, NonLocal) ->
     % * io:format("List empty~n"),
+    %% TODO: Might have to use add_drops here instead.
     {dict:from_list(Local), dict:from_list(NonLocal)};
 filter_drops(S, [D|Drops], Local, NonLocal) ->
     % * io:format("Testing Drop:"),
@@ -419,7 +436,7 @@ filter_drops(S, [D|Drops], Local, NonLocal) ->
             filter_drops(S, Drops, Local, [D|NonLocal])
     end.
 
-
+%% Do something with drops that leave the entire domain.
 %% nodestate -> DropDict -> DropList
 handle_boundary_drops(S, OldDrops) ->
     Coords = dict:fetch_keys(OldDrops),
@@ -454,7 +471,7 @@ handle_boundary_drop(
     end.
 
 
-%% Return true if the drop D is in domain of S, else false.
+%% Return true if the drop D is in domain of nodestate S, else false.
 %% nodestate -> {{Coords}, Drop} -> Bool
 is_local(S = #nodestate{}, {{X, Y, Z}, _Drop}) when is_integer(X),
 is_integer(Y), is_integer(Z)  ->

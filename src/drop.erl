@@ -5,15 +5,22 @@
 -include_lib("constants.hrl").
 -include_lib("drop.hrl").
 
-%% Make a new drop
+%% Make a new drop of normally distributed size.
+%% dropstate
 new() -> new(new_size()).
+%% Make a new drop of Size size.
+%% Float -> dropstate
 new(Size) when is_number(Size), Size >= 0 -> #dropstate{size = Size}.
 
+%% Combine two drops into one by water volume.
+%% dropstate -> dropstate -> dropstate.
 coalesce(S1 = #dropstate{size = Size}, #dropstate{size = Size2}) when
 is_float(Size), is_float(Size2) ->
     NewSize = radius(volume(Size) + volume(Size2)),
     S1#dropstate{size = NewSize}.
 
+%% Determine if two drops should coalesce.
+%% dropstate -> dropstate -> bool
 coalesce_test(S1 = #dropstate{}, S2 = #dropstate{}) ->
     case {S1#dropstate.size, S2#dropstate.size} of
         {A, B} when (A > 2.5) or (B > 2.5) -> false;
@@ -42,6 +49,7 @@ it_splits(Size) when is_float(Size), Size >= 0 ->
     1 - (1 / (1 + math:pow(1 - ?HALF_SPLIT_SIZE + Size, ?SPLIT_STEEPNESS)))
     > random_uniform_nonboundary(0,1).
 
+%% TODO, check out the redo of this in some_math.nb
 %% Mathematica's FindFit to give model params for drag equation of a sphere.
 %% http://en.wikipedia.org/wiki/Terminal_velocity
 %% Density of rain = 1000 kg/m³
@@ -51,12 +59,13 @@ it_splits(Size) when is_float(Size), Size >= 0 ->
 %% 0.1mm -> 700 mm/s
 %% 1mm -> 5500 mm/s
 %% MILLIMETERS PER SECOND, FOLKS
+%% dropstate -> float
 terminal_velocity(#dropstate{size = Size}) when is_float(Size) -> terminal_velocity(Size);
 terminal_velocity(Size) when is_float(Size), Size > (?HALF_SPLIT_SIZE / 27) ->
     (-100 + 618.051 * math:pow(Size - (?HALF_SPLIT_SIZE / 60), 0.5)) * 10;
 terminal_velocity(Size) when is_float(Size), Size > 0.04 -> 1298.16 * math:pow((-0.0258 + 10
             * Size), 8) * 10;
-terminal_velocity(_) -> 0.
+terminal_velocity(_) -> 0.0.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%                   %%
@@ -69,7 +78,8 @@ terminal_velocity(_) -> 0.
 %% http://ga.water.usgs.gov/edu/raindropsizes.html
 %% Range 0.001mm, 0.05mm. "Rain" at 0.5mm.
 %% Changing this to have larger drop sizes initially. Otherwise we don't get
-%% there without ENORMOUS domains
+%% there without ENORMOUS domains or crazy conditions
+%% float
 new_size() ->
     %X = gaussian(0.025, 0.006),
     X = gaussian(0.05, 0.006),
