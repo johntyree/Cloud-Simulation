@@ -24,12 +24,12 @@ void setup()
   dropscale = 2 * 1/mingraph;
   dropscale = 28;
   frameRate(15);
-  reader = createReader("run_0.001_5000_2000_1_0.42_50_200");
-  //reader = createReader("run_0.001_1000_2000_0.1_0.54_50_200");
-  //reader = createReader("run_0.001_1000_2000_0.5_0.9_50_200");
-  //reader = createReader("run_0.001_1000_2000_1_1.2_50_200");
-  //reader = createReader("run_0.001_500_2000_1_1.5_50_200");
-  //reader = createReader("run_0.001_0_5000_1_2_50_200");
+  reader = createReader("data/run_0.001_5000_2000_1_0.42_50_200");
+  //reader = createReader("data/run_0.001_1000_2000_0.1_0.54_50_200");
+  //reader = createReader("data/run_0.001_1000_2000_0.5_0.9_50_200");
+  //reader = createReader("data/run_0.001_1000_2000_1_1.2_50_200");
+  //reader = createReader("data/run_0.001_500_2000_1_1.5_50_200");
+  //reader = createReader("data/run_0.001_0_5000_1_2_50_200");
 
   size(sx, sy, P2D);
   fill(#8874FF);
