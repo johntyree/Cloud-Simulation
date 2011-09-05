@@ -1,12 +1,94 @@
 how do we do this?
 
-spawn node
-MAYBE populate node stochastically
-MAYBE send drops to node
 
-node waits for messages
+First, an empty node is spawned. This is the 'cloud' node, or the node that all
+other nodes will come from. This cloud node is then sent a repopulate message,
+which generates new drop objects to be added. It calculates the number of drops
+to be added by constant * volume * RELATIVE_HUMIDITY parameter. These drops are
+placed at random coordinates throughout the domain and assigned a gaussian
+distributed size with mean 0.05 and stddev 0.006.
 
-tell node to simulate a timestep
+The node is now waiting for messages from the main process.
+
+Node is sent a message to simulate one timestep.
+
+
+Time steps:
+Fold over the collection of drops, first testing each drop to see if it splits
+into two, which are then pushed back into the list, then moving each one in a
+modified brownian walk according to terminal velocity, lateral windspeed, and
+updraft. A drop can thus split into two and move in two different directions.
+After all drops have been assigned new locations, they are tested for
+collisions.
+After the collisions have been processed, the collection of drops
+is split into two groups, those which still lie within the domain of the node
+and those which have moved outside of it. Drops which have left the domain are
+sent to the parent node to be redistributed to other nodes as necessary. The
+node then generates new drops according to RELATIVE_HUMIDITY again. These drops
+are added to the collection and tested for collision.
+
+Split Test:
+Sigmoid curve of probability based on size.
+1 - (1 / (1 + math:pow(1 - ?HALF_SPLIT_SIZE + Size, ?SPLIT_STEEPNESS))) > rand(0,1)
+
+Modified Brownian Motion:
+In the absence of wind and gravity, drops are assumed to follow brownian motion
+throughout the domain. The new location vector of each drop is thus
+
+\vec{loc} + [dx, dy, dz] where dx,dy,dz \in [-m,m] where m = scaling constant
+
+Lateral wind motion is then taken into account as
+dx += rand(Gust * -Windspeed, Gust * -Windspeed * c) where c = scaling constant
+
+Since they are so small, acceleration time is ignored and all drops are assumed
+to be falling at terminal velocity. This is countered by the characteristic
+updraft that develops large storms. The updraft, like the lateral wind, has
+stochastic gusting added to it and is defined by:
+dy += rand(-Tvelocity + Gust * ?UPDRAFT, -Tvelocity * 0.3 + Gust * ?UPDRAFT)
+
+Movement in the Z direction is not yet implemented. Thus for all drops at all
+times:
+
+dz = 0
+
+Terminal velocity:
+A 3 segment piece-wise function defined as:
+T(x) = x > (?HALF_SPLIT_SIZE / 27),         (-100 + 618.051 * \sqrt{x - ?HALF_SPLIT_SIZE / 60}) * 10
+       (?HALF_SPLIT_SIZE / 27) >= x > 0.04, 1298.16 * (-0.0258 + 10 * x)^8 * 10,
+       x <= 0.04,                           0.0
+check somemath.nb for graphs about this.
+
+Collision Test:
+If a drop size times COLLISION_SCALE_CHECK, specified at compile time, is
+greater than 1 then all points within a radius SearchSize are
+checked for the presence of other drops. Search size is set as the radius of the
+drop times COLLISION_SCALE_CHECK (minimum value 1). All drops present are tested
+for coalescence.
+If two drops are present at the same point, regardless of size, they are tested
+for coalescence.
+
+Coalescence:
+Two drops coalescing is affected by several different factors, the most
+prominent of which are surface tension and momenetum. This factors are
+encompassed in the study by CITATION that describes a generalized coalescence
+probability distribution as follows:
+If either drop is larger than radius 2.5mm, it is too big to coalesce. The
+smaller drop will either bounce off of the larger one or the larger one will
+simply split upon impact.
+If either drop is smaller than radius 0.4mm coalescence is virtually guaranteed,
+provided the first case fails.
+If either drop is larger than radius 1mm, there is approximately a 20% chance of
+coalescence.
+In all other cases, coalescence is highly likely (assumed 100% here)
+
+
+Notes on the model:
+No evaporation.
+
+
+Resources:
+http://sts.bwk.tue.nl/drivingrain/fjrvanmook2002/node8.htm
+
 
 LOOP BEGIN
 receive msg

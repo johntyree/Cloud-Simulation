@@ -1,0 +1,65 @@
+%        File: Modeling_the_Formation_of_Rain.tex
+
+\documentclass[twocolumn,a4paper,10pt]{article}
+\usepackage{times}
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{subfig}
+\usepackage{wrapfig}
+\usepackage{gensymb}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{titling}
+\usepackage{minted}
+\definecolor{LightGray}{rgb}{0.95,0.95,0.95}
+\newminted{c}{
+  linenos,
+  frame=single,
+  fontsize=\footnotesize,
+  bgcolor=LightGray,
+}
+% Hyperref must be last
+\usepackage[backref,colorlinks,linkcolor=blue]{hyperref}
+
+\newcommand{\TODO}{{\huge\emph{\color{red}!}}}
+
+\title{Modeling the Formation of Rain using Hi-Performance Erlang}
+\author{John Tyree\\
+University of Amsterdam\\
+\texttt{tyree@science.uva.nl}}
+\date{\today}
+\hypersetup{
+  pdftitle={\thetitle},
+  pdfauthor={John Tyree}
+}
+
+\begin{document}
+\maketitle
+\section{Abstract}
+\section{Introduction}
+Most computationally intensive simulations are made using a combination of C,
+C++, and FORTRAN in the interest of speed. Technological innovation in the field
+of single core processors is no longer following moore's law and has stalled
+around 3Ghz. This hasn't meant the halt of progress in computing power, though,
+as the industry turns to parallelism to acheive its gains. While frameworks
+for developing software to utilize multiple computational threads exist in these
+common languages, newer languages are being developed which may ultimately be
+more suited to this style of programming. This paper explores the efficacy of
+Erlang as a new computational tool. As a test case, a simulation of the
+formation of rain in a cloud is presented.
+
+\section{Theory of Rain Formation}
+Discuss the progressional development of rain from condensation on a dust speck
+to condensation of multidrops together to actual rain sized droplets falling.
+Can also discuss splitting and rejoining of droplets. Talk about updrafting
+suspending particles in the air until they have time to come together.
+
+
+
+
+\end{document}
+
+
