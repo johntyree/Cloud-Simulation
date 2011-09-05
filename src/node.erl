@@ -185,7 +185,7 @@ spatial_volume(S = #nodestate{}) ->
 
 %% This version is faster for large domains...
 %% Create new drops in the domain according to RELATIVE_HUMIDITY.
-%% Return nodestate with area * relative_humidity drops added
+%% Return nodestate with constant * area * relative_humidity drops added
 %% nodestate -> nodestate
 spawn_new_drops(S = #nodestate{}) ->
     spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
@@ -198,7 +198,7 @@ spawn_new_drops(S = #nodestate{}, Density) when is_float(Density) ->
 %% Return nodestate with area * relative_humidity drops added
 %% nodestate -> nodestate
 xspawn_new_drops(S = #nodestate{}) ->
-    spawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
+    xspawn_new_drops(S, ?RELATIVE_HUMIDITY * 0.1).
 xspawn_new_drops(S = #nodestate{}, Density) ->
     XRange = lists:seq(S#nodestate.x1, S#nodestate.x2),
     YRange = lists:seq(S#nodestate.y1, S#nodestate.y2),
@@ -393,7 +393,7 @@ rain_mvmt(Coord, Drop = #dropstate{size = Size}) when is_float(Size) ->
     Gust = get(gust),
     Drops = drop:split(Drop),
     [{migrate(Coord, random_direction(
-                0.0 - Gust * ?WINDSPEED, Gust * -?WINDSPEED * 0.3, % X
+                Gust * -?WINDSPEED, Gust * -?WINDSPEED * 0.3, % X
                 -Tvelocity + Gust * ?UPDRAFT, -Tvelocity * 0.3 + Gust * ?UPDRAFT, % Y
                 0.0, 0.0 % Z
             )
