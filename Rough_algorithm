@@ -85,10 +85,8 @@ In all other cases, coalescence is highly likely (assumed 100% here)
 Notes on the model:
 No evaporation.
 
-
 Resources:
 http://sts.bwk.tue.nl/drivingrain/fjrvanmook2002/node8.htm
-
 
 LOOP BEGIN
 receive msg
