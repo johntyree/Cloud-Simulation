@@ -1,0 +1,29 @@
+In order to have rain you must have a cloud--a cloud is made up of water in the air (water vapor.) Along with this water are tiny particles called condensation nuclei--for instance, the little pieces of salt leftover after sea water evaporates, or a particle of dust or smoke. Condensation occurs when the water vapor wraps itself around the tiny particles. Each particle (surrounded by water) becomes a tiny droplet between 0.0001 and 0.005 centimeter in diameter. (The particles range in size, therefore, the droplets range in size.) However, these droplets are too light to fall out of the sky. How will they get big enough to fall?
+
+Picture a huge room full of tiny droplets milling around. If one droplet bumps into another droplet, the bigger droplet will "eat" the smaller droplet. This new bigger droplet will bump into other smaller droplets and become even bigger--this is called coalescence. Soon the droplet is so heavy that the cloud (or the room) can no longer hold it up and it starts falling. As it falls it eats up even more droplets. We can call the growing droplet a raindrop as soon as it reaches the size of 0.5mm in diameter or bigger. If it gets any larger than 4 millimeters, however, it will usually split into two separate drops.
+
+The raindrop will continue falling until it reaches the ground. As it falls, sometimes a gust of wind (updraft) will force the drop back up into the cloud where it continues eating other droplets and getting bigger. When the drops finally reach the ground, the biggest drops will be the ones that bumped into and coalesced with the most droplets. The smaller drops are the ones that didn't run into as many droplets. Raindrops are different sizes for two primary reasons.
+
+
+Dewpoint is the roof.
+
+
+The more water vapor there is below the cloud, and the stronger the updrafts that cause this water vapor to condense into cloud water or ice particles, the more likely it is that precipitation will form within the cloud. 
+
+So, a cloudy day with no precipitation indicates that there is either (1) not enough water vapor available to the cloud for precipitation to form, or (2) that the rising motion creating the cloud is not strong enough -- or both.     At the opposite extreme is a tropical rain shower that has large amounts of water vapor available to it (like the one pictured at the top of this page), and which can rain heavily from even a small cloud with weak updrafts. 
+
+In warm air masses, precipitation occurs primarily within localized shower clouds that have strong updrafts. In cooler airmasses, precipitation (rain or snow) usually occurs in large cloud systems associated with low pressure zones. These low pressure zones usually form along the boundary between warm and cold air masses, where the flow of air around the low pressure causes large areas of weak rising motion as air from the warmer air mass flows up and over the colder air mass.
+
+Ref:
+
+The development of the HiPE system:
+design and experience report
+http://user.it.uu.se/~kostis/Papers/hipe-sttt.pdf
+
+Sensitivity of Cloud Droplet Growth to Collision and Coalescence Efﬁciencies in a
+Parcel Model
+http://journals.ametsoc.org/doi/pdf/10.1175/1520-0469(1998)055%3C2502%3ASOCDGT%3E2.0.CO%3B2
+
+Hypothesis:
+
+With lots of power, one could make the domain large enough for a meaningful simulation. Need TIME to traverse vapor area. Tried scaling down movement to simulate larger domain but it doesn’t increase the collisions  with large drops, just newly generated small ones.
