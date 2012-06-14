@@ -13,14 +13,14 @@
 \usepackage{array}
 \usepackage{listings}
 \usepackage{titling}
-\usepackage{minted}
-\definecolor{LightGray}{rgb}{0.95,0.95,0.95}
-\newminted{c}{
-  linenos,
-  frame=single,
-  fontsize=\footnotesize,
-  bgcolor=LightGray,
-}
+% \usepackage{minted}
+% \definecolor{LightGray}{rgb}{0.95,0.95,0.95}
+% \newminted{c}{
+  % linenos,
+  % frame=single,
+  % fontsize=\footnotesize,
+  % bgcolor=LightGray,
+% }
 % Hyperref must be last
 \usepackage[backref,colorlinks,linkcolor=blue]{hyperref}
 
@@ -40,22 +40,32 @@ University of Amsterdam\\
 \maketitle
 \section{Abstract}
 \section{Introduction}
-Most computationally intensive simulations are made using a combination of C,
-C++, and FORTRAN in the interest of speed. Technological innovation in the field
-of single core processors is no longer following moore's law and has stalled
-around 3Ghz. This hasn't meant the halt of progress in computing power, though,
-as the industry turns to parallelism to acheive its gains. While frameworks
-for developing software to utilize multiple computational threads exist in these
-common languages, newer languages are being developed which may ultimately be
-more suited to this style of programming. This paper explores the efficacy of
-Erlang as a new computational tool. As a test case, a simulation of the
-formation of rain in a cloud is presented.
+Most computationally intensive simulations are made using a combination of C, C++, and FORTRAN in the interest of speed. Technological innovation in the field of single core processors is no longer following Moore's law and has stalled around 3Ghz. This hasn't meant the halt of progress in computing power, though, as the industry turns to parallelism to achieve its gains. While frameworks for developing software to utilize multiple computational threads exist in these common languages, newer languages are being developed which may ultimately be more suited to this style of programming. This paper explores the efficacy of Erlang as a new computational tool. As a test case, a simulation of the formation of rain in a cloud is presented.
 
 \section{Theory of Rain Formation}
-Discuss the progressional development of rain from condensation on a dust speck
-to condensation of multidrops together to actual rain sized droplets falling.
-Can also discuss splitting and rejoining of droplets. Talk about updrafting
-suspending particles in the air until they have time to come together.
+Discuss the progressional development of rain from condensation on a dust speck to condensation of multidrops together to actual rain sized droplets falling.  Can also discuss splitting and rejoining of droplets. Talk about updrafting suspending particles in the air until they have time to come together.
+
+\section{Model Limitations and Assumptions}
+
+\section{Erlang}
+Erlang is a high level functional language, originally developed by Eriksson in the 1990's to handle telecommunications workloads. It has since grown to enjoy wide-spread use in the telecommunications industry as the workhorse runtime in switches and interchanges. To this end, it has been designed from the ground up with a strong focus on concurrency, fault-tolerance, and, somewhat unlike its academic brethren, practicality.
+
+From the perspective of the scientific programmer, working in FORTRAN or C, Erlang has very different and confusing semantics. In this section, I will try to address the more obvious quirks and argue my case for choosing Erlang as a potentially valuable tool in the scientific computing arena.
+
+\subsection{Why not C?}
+When we were all introduced to algebra at the beginning of our scientific careers, we learned that abstract representations of values such as $x$ were constant. Given two equations, $x = 3$ and $y = x$, we could say with confidence that $y = 3$ as well. This gave us very powerful tools for reasoning about complex systems of equations. We could directly substitute variables for their values, which might again be expressed in terms of variables. This is referred to as \emph{referential transparency}.
+
+Unfortunately, when we all learned our first programming language, we were told that \emph{referential transparency} was no longer the way things worked. Suddenly, expressions like $X = X + 1$ were claimed to make sense and stranger still, this was considered a great and useful trick when writing programs. Imperative (read: sequential) languages like C and Java take this abandonment of mathematics to the extreme. It is virtually impossible to program these languages without making use of dynamically valued variables. As one might expect, by relaxing the notion that $x = x$ for any two instances of $x$ in the same context, referential transparency was lost and the ability to reason about the correctness of a program disappeared with it. We haven't even begun discussing the difficulty of reasoning about \emph{concurrent} algorithms written in this style. The good news is that many very talented people have put a heroic effort into writing programs in these languages which, almost by magic, produce mathematically accurate results. The bad news is that, typically, we are not those people. For you and I, the Programming Scientists, writing non-trivial programs in C which produce valid results is difficult and extremely time consuming. Personal experience and informal survey of my own colleagues suggests that upwards of 90\% of the time spent ``programming'' is actually spent searching for and correcting the inadvertent effects of changing the value of variables.
+
+\subsection{Single Assignment Variables}
+The irony, of course, is that we are specifically interested in \emph{mathematical} programming. Fortunately, there has been a minor revival of the functional programming movement lately. Highly specialized languages such as Mathematica provide a gentle reintroduction to mathematical programming for those who have forgotten their algebraic roots\footnote{Pun intended.}. These languages do suffer from their own problems, however. As demand for large-scale simulation increases with computing power, the need for parallel algorithms that can exploit multiple concurrent threads of execution become grows with it. Equally important is the ability of the programmer to successfully implement these algorithms.
+
+\subsection{Pattern Matching}
+
+
+\TODO 
+
+\section{Implementation}
 
 
 
