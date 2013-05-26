@@ -26,7 +26,7 @@ University of Amsterdam\\
 \date{\today}
 \hypersetup{
   pdftitle={\thetitle},
-  pdfauthor={John Tyree}
+  PDF author={John Tyree}
 }
 
 \begin{document}
@@ -90,61 +90,15 @@ precipitation.
 This is not the entire story however, as direct coalescence is not enough to
 form raindrops of the sizes observed, some having diameters as large as 4mm. For
 these to form, more time in the air to allow for more coalescence is needed.
-This indeed occurs in real storm systems by way of a process called updrafting.
+This indeed occurs in real storm systems by way of a mixing process.
 
-Updrafts are warm air currents that rise up through colder air bodies, lifting
-suspended particles and droplets back up into cloud formations as they mix by
-convection. The speed of these drafts can vary from non-existent to several
-meters per second, with the faster drafts being associated with the most violent
-storms and consequently, the largest individual rain drops.
-
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=\linewidth]{cloud}
-    \caption{}
-    \label{fig:cloud}
-\end{figure*}
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=0.75\linewidth]{coalesce_efficiency}
-    \caption{}
-    \label{fig:coalesce}
-\end{figure*}
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.75\linewidth]{raindrop_shapes}
-    \caption{}
-    \label{fig:raindrop}
-\end{figure}
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=0.75\linewidth]{terminal_velocity}
-    \caption{}
-    \label{fig:velocity}
-\end{figure*}
-
-
-
-
-Picture a huge room full of tiny droplets milling around. If one droplet bumps
-into another droplet, the bigger droplet will "eat" the smaller droplet. This
-new bigger droplet will bump into other smaller droplets and become even
-bigger--this is called coalescence. Soon the droplet is so heavy that the cloud
-(or the room) can no longer hold it up and it starts falling. As it falls it
-eats up even more droplets. We can call the growing droplet a raindrop as soon
-as it reaches the size of 0.5mm in diameter or bigger. If it gets any larger
-than 4 millimeters, however, it will usually split into two separate drops.
-
-The raindrop will continue falling until it reaches the ground. As it falls,
-sometimes a gust of wind (updraft) will force the drop back up into the cloud
-where it continues eating other droplets and getting bigger. When the drops
-finally reach the ground, the biggest drops will be the ones that bumped into
-and coalesced with the most droplets. The smaller drops are the ones that didn't
-run into as many droplets. Raindrops are different sizes for two primary
-reasons.
-
-
-Dewpoint is the roof.
+As a raindrop falls, sometimes a gust of wind, called an \emph{updraft} will
+force the drop back up into the cloud.  Updrafts are warm air currents that rise
+up through colder air bodies, lifting suspended particles and droplets back up
+into cloud formations as they mix by convection. The speed of these drafts can
+vary from non-existent to several meters per second, with the faster drafts
+being associated with the most violent storms and consequently, the largest
+individual rain drops.
 
 
 The more water vapor there is below the cloud, and the stronger the updrafts
@@ -180,7 +134,53 @@ Hypothesis:
 
 With lots of power, one could make the domain large enough for a meaningful simulation. Need TIME to traverse vapor area. Tried scaling down movement to simulate larger domain but it doesn’t increase the collisions  with large drops, just newly generated small ones.
 
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\linewidth]{cloud}
+    \caption{}
+    \label{fig:cloud}
+\end{figure*}
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.75\linewidth]{coalesce_efficiency}
+    \caption{}
+    \label{fig:coalesce}
+\end{figure*}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{raindrop_shapes}
+    \caption{}
+    \label{fig:raindrop}
+\end{figure}
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.75\linewidth]{terminal_velocity}
+    \caption{}
+    \label{fig:velocity}
+\end{figure*}
+
+
+
+
+
 \section{Model Limitations and Assumptions}
+
+The model proposed here is based on a few key simplifications. First, and
+perhaps most importantly, we limit ourselves to a two-dimensional rectangular
+domain which significantly taller than it is wide. This shape is a loose
+interpretation of the relevant shape of a cloud from the perspective of a single
+raindrop, but necessarily ignores factors such as neighboring cloud
+interactions and the often significant lateral wind, which ``rolls'' in a cyclic
+pattern at the edges of a towering cloud.
+
+A second major assumption is that amount of aerosol in the air remains constant.
+This is *known* to be false as airborne particulate counts are shown to be at
+their lowest, and visibility at its highest, after a rain event has pulled the
+aerosols to the ground. This is important because it affects the likelihood of
+new drops forming by reducing the available condensation nuclei. In this
+simulation, the rate at which new drops appear is a constant function of the
+humidity, and thus implicitly assumes a constant aerosol density and size
+distribution.
 
 \section{Erlang}
 Erlang is a high level functional language, originally developed by Eriksson in the 1990's to handle telecommunications workloads. It has since grown to enjoy wide-spread use in the telecommunications industry as the workhorse runtime in switches and interchanges. To this end, it has been designed from the ground up with a strong focus on concurrency, fault-tolerance, and, somewhat unlike its academic brethren, practicality.
