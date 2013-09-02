@@ -3,6 +3,7 @@
 \documentclass[twocolumn,a4paper,10pt]{article}
 \usepackage{times}
 \usepackage{fixltx2e}
+\usepackage{placeins} % for \Floatbarrier
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[parfill]{parskip}
@@ -122,10 +123,10 @@ raindrops.
 
 These raindrops, having grown large enough that gravitational effects begin to
 dominate their dynamics, will continue to fall until they reach the ground as
-precipitation. While this mechanism is clear and intuitive, it is incomplete, as
+precipitation. While this mechanism is clear and intuitive, it is incomplete;
 direct coalescence during random motion under the influence of gravity is not
 enough to form raindrops of the sizes observed, some having diameters as large
-as 4mm. For these larger drops to form, more time in the air is needed. This
+as 4mm. For these larger drops to form more time in the air is needed. This
 indeed occurs in real storm systems by way of a mixing process.
 
 As a raindrop falls, an occasional gust of wind, called an \emph{updraft}, might
@@ -164,12 +165,12 @@ drops, just newly generated small ones.
     \caption{}
     \label{fig:raindrop}
 \end{figure}
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=0.75\linewidth]{terminal_velocity}
-    \caption{}
-    \label{fig:velocity}
-\end{figure*}
+% \begin{figure*}[t]
+    % \centering
+    % \includegraphics[width=0.75\linewidth]{terminal_velocity}
+    % \caption{}
+    % \label{fig:velocity}
+% \end{figure*}
 
 
 \section{Model Limitations and Assumptions}
@@ -183,7 +184,7 @@ interactions and the often significant lateral wind, which ``rolls'' in a cyclic
 pattern at the edges of a towering cloud.
 
 A second major assumption is that amount of aerosol in the air remains constant.
-This is *known* to be false as airborne particulate counts are shown to be at
+This is known to be false as airborne particulate counts are shown to be at
 their lowest, and visibility at its highest, after a rain event has pulled the
 aerosols to the ground. This is important because it affects the likelihood of
 new drops forming by reducing the available condensation nuclei. In this
@@ -199,7 +200,7 @@ the 1990's to handle telecommunications workloads. It has since grown to enjoy
 wide-spread use in the telecommunications industry as the workhorse runtime in
 switches and interchanges. To this end, it has been designed from the ground up
 with a strong focus on concurrency, fault-tolerance, and, somewhat unlike its
-academic brethren, practicality.
+academically-focused functional language brethren, practicality.
 
 From the perspective of the scientific programmer, working in FORTRAN or C,
 Erlang has very different and confusing semantics. In this section, I will try
@@ -283,13 +284,13 @@ function interfaces, decreasing uncertainty about the true origin of bugs.
 
 As stated previously, maintaining scalability with respect to performance was a
 key goal of this project. To that end, I chose to model the computational domain
-as a monoid based on quadtrees, a tree-like partitioning method based on data
+a forest of quadtrees, a tree-like partitioning method based on data
 location and density.
 
 \subsection{Domain as a forest of quadtrees}
 
 The computational domain, ``the sky'', is represented by a collection of
-quadtree. This is simply a tree in which every node has exactly four children,
+quadtrees. This is simply a tree in which every node has exactly four children,
 representing the four quadrants of a rectangular subdomain. These in turn are
 nodes themselves which can be further subdivided as necessary. A strict
 definition of quadtrees requires that each subdomain be so divided until it
@@ -327,7 +328,10 @@ Now with a tiny bit of extra work communicating points from bordering regions,
 we can independently work inside of all subdomains concurrently. Indeed,
 \emph{this} is the original motivation for testing a language like Erlang on
 this problem. I believe that the message passing, massively concurrent style of
-Erlang programming is a great fit.
+Erlang programming is a great fit. Each tree represents a node on the network of
+machines and each Erlang process is a node in the tree. Since, the Erlang
+runtime is designed to handle tens or hundreds of thousands of threads
+efficiently we can safely represent our domain this way.
 
 Our simulation will run as a collection of stochastic cellular automata. Each
 cell containing potentially multiple drops, each of which follows a random walk
@@ -352,8 +356,24 @@ strongly inversely correlated with coalescence efficiency. These qualities
 suggest that large numbers of small droplets should be produced, with very few
 large droplets forming.
 
+\TODO 
+% Simulation implementation
+% Environment:
+% Determine values from literature:
+% Relative Humidity: 1
+% Updraft Speed:
+    % Minimum: 0
+    % Maximum: >100 km/h
+% Coalescence Efficiency (previously shown)
+% Split frequency distribution:
+    % 1.5mm -> approx. 0.5
+    % 3mm -> approx. 1
+% Vapor drop size
+    % Normally distributed
+    % Mean -> 0.025
+    % Stddev -> 0.006
 
-
+% http://ncar.ucar.edu/learn-more-about/weather
 
 \subsection{Performance}
 
@@ -377,14 +397,102 @@ such as Python. Unfortunately, Python is not known for speed when running
 numerically intensive algorithms.
 
 
+\autoref{tab:terminal_velocities} shows the reference values given in the
+literature for the terminal velocities of droplets of a particular diameter. In
+our simulation, we use this data to interpolate the terminal velocity for
+arbitrarily sized drops. As the values are nonlinear in diameter, we take the
+model shown in \autoref{eq:terminal_velocities},
+\begin{align}
+    Y = aX^b + c,
+    \label{eq:terminal_velocities}
+\end{align}
+where $Y$ represents velocity, $X$, diameter and $a, b,$ and $c$ are parameters.
+\autoref{fig:terminal_velocities} plots the best fit for the data using SciPy's
+nonlinear regression package\cite{scipy}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.00\linewidth]{terminal_velocity_model.pdf}
+    \caption{Model parameters and fit for the data in
+        \autoref{tab:terminal_velocities}.}
+    \label{fig:terminal_velocities}
+\end{figure}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|r|l|}
+        \hline
+        Diameter (mm) &  Velocity (m/s) \\
+        \hline
+        0.1 &            0.27 \\
+        0.2 &            0.72 \\
+        0.3 &            1.17 \\
+        0.4 &            1.62 \\
+        0.5 &            2.06 \\
+        0.6 &            2.47 \\
+        0.7 &            2.87 \\
+        0.8 &            3.27 \\
+        0.9 &            3.67 \\
+        1.0 &            4.03 \\
+        1.2 &            4.64 \\
+        1.4 &            5.17 \\
+        1.6 &            5.65 \\
+        1.8 &            6.09 \\
+        2.0 &            6.49 \\
+        2.2 &            6.90 \\
+        2.4 &            7.27 \\
+        2.6 &            7.57 \\
+        2.8 &            7.82 \\
+        3.0 &            8.06 \\
+        3.2 &            8.26 \\
+        \hline
+    \end{tabular}
+    \caption{Terminal velocities for specific droplet sizes taken from
+        \citet{hu1998}.}
+    \label{tab:terminal_velocities}
+\end{table}
 
 
+\section{Drop Coalescence}
+
+Despite \autoref{fig:raindrop} indicating that raindrops are far from spherical
+in the real world, we model them as spheres for the sake of collision detection.
+We simply take the euclidean distance between between each pair of drops and
+compare it to those drops' radii. If the drops are touching, we use a highly
+simplified probabilistic function to determine if they coalesce, in accordance
+with \autoref{fig:coalesce}. The Erlang function \texttt{c\_test}, shown below,
+is our implementation.
+\begin{verbatim}
+%% Determine if two drops should
+%% coalesce.
+%% type: (drop, drop) -> bool
+c_test(S1 = #drop{}, S2 = #drop{}) ->
+  case {S1#drop.size, S2#drop.size} of
+    {A, B} when
+      (A > 2.5) or (B > 2.5) -> false;
+    {A, B} when
+      (A < 0.4) or (B < 0.4) -> true;
+    {A, B} when
+      (A > 1) or (B > 1) ->
+         (urand(0,1) > 0.2);
+
+    %% otherwise
+    {_A, _B} -> true
+end.
+\end{verbatim}
 
 
+\begin{figure*}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{rain_size_table.pdf}
+    % \caption{<++>}
+    % \label{fig:<+sublabel+>}
+\end{figure*}
 
 
+\FloatBarrier
 
-\clearpage
+
 \nocite{*}
 \bibliographystyle{unsrtnat}
 \bibliography{Modeling_the_Formation_of_Rain.bib}
