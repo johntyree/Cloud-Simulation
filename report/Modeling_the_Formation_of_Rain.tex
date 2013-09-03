@@ -81,6 +81,7 @@ The simulation is based on real world data and, under admittedly strong
 assumptions, remains experimentally consistent with the theory.
 
 \section{Theory of Rain Formation}
+\label{sec:theory}
 
 The phenomenon of rain is one to which almost everyone can relate. Dark cloud
 formations loom overhead and the barometric pressure sinks. When the rain begins
@@ -91,7 +92,7 @@ rain formation.
 Rain begins as simply moisture dissolved in the air as water vapor called
 \emph{humidity}.  This humidity can vary widely, from extremely low, in dry
 desert air, to heavy and thick during fog conditions. It is dependent on several
-key factors, the most significant being air temperature\citet{hu1998}. When the
+key factors, the most significant being air temperature\citet{coalesce}. When the
 humidity is sufficiently high and the air temperature is sufficiently low, the
 vapor in the air will begin to condense. This is colloquially referred to as the
 ``dew point.''
@@ -140,7 +141,7 @@ stronger the updrafts that allow for this water vapor to condense into cloud
 water or ice particles, the more likely it is that precipitation will form
 within the cloud.
 
-Hypothesis:
+\TODO Hypothesis:
 
 With lots of power, one could make the domain large enough for a meaningful
 simulation. Need TIME to traverse vapor area. Tried scaling down movement to
@@ -232,11 +233,10 @@ written in this style. The good news is that many very talented people have put
 a heroic effort into writing programs in these languages which, almost by magic,
 produce mathematically accurate results. The bad news is that, typically, we are
 not those people. For you and I, the Programming Scientists, writing non-trivial
-programs in C which produce valid results is difficult and extremely time
-consuming. Personal experience and informal survey of my own colleagues suggests
-that upwards of 90\% of the time spent ``programming'' is actually spent
-searching for and correcting the inadvertent effects of changing the value of
-variables.
+programs in C which produce valid results is difficult and time consuming.
+Personal experience and informal survey of my own colleagues suggests that
+upwards of 90\% of the time spent ``programming'' is actually spent searching
+for and correcting the inadvertent effects of changing the value of variables.
 
 \subsection{Single Assignment Variables}
 
@@ -343,11 +343,11 @@ interaction.
 \label{sec:rules}
 
 The deterministic aspect of the simulation, as well as many parameters from the
-stochastic aspect, come from the admittedly shallow body of literature
-surrounding the physics of rain itself. We classify a droplet as ``rain'' when
-it attains a size of 0.5mm or greater. \citet{hu1998} provides interpolated
-values for the likelihood of drops to coalesce when touching one another,
-referred to \emph{coalescence efficiency}.
+stochastic aspect, come from the body of literature surrounding the physics of
+rain itself. We classify a droplet as ``rain'' when it attains a size of 0.5mm
+or greater. \citet{coalesce} provides interpolated values for the likelihood of
+drops to coalesce when touching one another, referred to \emph{coalescence
+efficiency}.
 
 As the snippet in \autoref{fig:coalesce} shows, very small drops, less than
 0.5mm, are more likely to coalesce than any other, but the drop in efficiency
@@ -356,24 +356,41 @@ strongly inversely correlated with coalescence efficiency. These qualities
 suggest that large numbers of small droplets should be produced, with very few
 large droplets forming.
 
-\TODO 
-% Simulation implementation
-% Environment:
-% Determine values from literature:
-% Relative Humidity: 1
-% Updraft Speed:
-    % Minimum: 0
-    % Maximum: >100 km/h
-% Coalescence Efficiency (previously shown)
-% Split frequency distribution:
-    % 1.5mm -> approx. 0.5
-    % 3mm -> approx. 1
-% Vapor drop size
-    % Normally distributed
-    % Mean -> 0.025
-    % Stddev -> 0.006
+For our simulation, we take the relative humidity to be 100\%. This is, of
+course, necessary if we want condensation of water vapor to occur.
 
-% http://ncar.ucar.edu/learn-more-about/weather
+Updraft strength within the cloud is bounded by literature values as well. In
+completely inactive systems, it may be 0 m/s, up to 10 m/s in strong storm
+systems. This value is highly variable, however, and at any given time, drops
+may experience updrafts of widely differing strengths within a single cloud
+\cite{microstructure}. This translates to a bounded random value which is
+applied to the random walk of each drop in the domain.
+
+
+The appearance of new nucleated drops, freshly condensed out of vapor, is also
+regulated. Since we cannot afford, computationally, to simulate nucleation on
+particulates in the air itself, we simply add a number of microscopic droplets
+to the domain such that a particular density of droplets per area is met. This
+density parameter is unfortunately not available from the literature, however,
+its adjustment only affects the amount of water in the domain, with minimal
+affect on the relative interactions of the other parameters on the distribution
+of drop sizes in which we are interested. Thus we simply take a value of 0.1 new
+drops per millimeter per time step across the domain. These new drops have
+normally distributed size with mean 0.025mm and standard deviation 0.006mm. This
+is taken 5 times the largest expected diameter of a brand new, nucleated droplet
+as explained in \autoref{sec:theory}.
+
+Finally we address the notion that droplets may spontaneously divide into two
+smaller droplets, as shown in \autoref{fig:raindrop}. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{split_distribution}
+    \caption{The likelihood of a drop to split is related to its diameter by a
+    sigmoid model. In this case, a 0.5 chance to split occurs at diameter 2.5mm.}
+    \label{fig:split_distribution}
+\end{figure}
+
 
 \subsection{Performance}
 
@@ -448,7 +465,7 @@ nonlinear regression package\cite{scipy}.
         \hline
     \end{tabular}
     \caption{Terminal velocities for specific droplet sizes taken from
-        \citet{hu1998}.}
+        \citet{terminal}.}
     \label{tab:terminal_velocities}
 \end{table}
 
